@@ -4,6 +4,7 @@ import {
   FilterGroup,
   GeneratorBlueprint,
   IMAGE_PLATFORMS,
+  Locale,
 } from "@/lib/types";
 import {
   brandContextSentence,
@@ -13,9 +14,11 @@ import {
   modeDirective,
   modeKeyword,
   platformSuffix,
-  selectedLabel,
-  selectedLabels,
+  selectedLabelLocalized,
+  selectedLabelsLocalized,
 } from "@/lib/prompt-engine";
+
+const SLUG = "image";
 
 /**
  * The Image generator is the flagship "Creative Director" experience: a rich,
@@ -519,14 +522,34 @@ function findGroup(id: string) {
   return imageGroups.find((g) => g.id === id)!;
 }
 
-function typographySentence(ctx: ComposeContext): string {
+function label(id: string, selections: ComposeContext["selections"], locale: Locale) {
+  return selectedLabelLocalized(findGroup(id), selections, SLUG, locale);
+}
+
+function labels(id: string, selections: ComposeContext["selections"], locale: Locale) {
+  return selectedLabelsLocalized(findGroup(id), selections, SLUG, locale);
+}
+
+function typographySentence(ctx: ComposeContext, locale: Locale): string {
   const { selections } = ctx;
-  const fontStyle = selectedLabel(findGroup("fontStyle"), selections);
-  const fontWeight = selectedLabel(findGroup("fontWeight"), selections);
-  const effects = selectedLabels(findGroup("textEffects"), selections);
-  const placement = selectedLabel(findGroup("textPlacement"), selections);
+  const fontStyle = label("fontStyle", selections, locale);
+  const fontWeight = label("fontWeight", selections, locale);
+  const effects = labels("textEffects", selections, locale);
+  const placement = label("textPlacement", selections, locale);
 
   if (!fontStyle && !fontWeight && effects.length === 0 && !placement) return "";
+
+  if (locale === "es") {
+    const parts: string[] = [];
+    if (fontStyle) {
+      parts.push(`tipografía ${fontStyle.toLowerCase()}${fontWeight ? ` de peso ${fontWeight.toLowerCase()}` : ""}`);
+    } else if (fontWeight) {
+      parts.push(`tipografía de peso ${fontWeight.toLowerCase()}`);
+    }
+    if (effects.length) parts.push(`un efecto de texto ${joinNatural(effects, "es").toLowerCase()}`);
+    if (placement) parts.push(`el texto ubicado en ${placement.toLowerCase()}`);
+    return `Si la composición incluye texto sobre la imagen, represéntalo usando ${joinNatural(parts, "es")}.`;
+  }
 
   const parts: string[] = [];
   if (fontStyle) {
@@ -540,11 +563,24 @@ function typographySentence(ctx: ComposeContext): string {
   return `If the composition includes on-image text, render it using ${joinNatural(parts)}.`;
 }
 
-function cameraSentence(ctx: ComposeContext, subject: string): string {
+function cameraSentence(ctx: ComposeContext, subject: string, locale: Locale): string {
   const { selections } = ctx;
-  const angle = selectedLabel(findGroup("camera"), selections);
-  const lens = selectedLabel(findGroup("lens"), selections);
-  const composition = selectedLabels(findGroup("composition"), selections);
+  const angle = label("camera", selections, locale);
+  const lens = label("lens", selections, locale);
+  const composition = labels("composition", selections, locale);
+
+  if (locale === "es") {
+    const bits: string[] = [];
+    if (angle) bits.push(`un ángulo de cámara ${angle.toLowerCase()}`);
+    if (lens) bits.push(`un lente ${lens}`);
+    if (bits.length === 0) bits.push("una profundidad de campo reducida");
+
+    const compositionText = composition.length
+      ? ` Organiza la composición siguiendo principios de ${joinNatural(composition, "es").toLowerCase()}.`
+      : "";
+
+    return `Captura usando ${joinNatural(bits, "es")}, manteniendo ${addSpanishArticle(subject)} en foco nítido mientras el fondo queda suavemente desenfocado.${compositionText}`;
+  }
 
   const bits: string[] = [];
   if (angle) bits.push(`a ${angle.toLowerCase()} camera angle`);
@@ -560,10 +596,18 @@ function cameraSentence(ctx: ComposeContext, subject: string): string {
   return `Capture using ${joinNatural(bits)}, keeping the ${subject.toLowerCase()} in crisp focus while the background falls softly out of focus.${compositionText}`;
 }
 
-function textureEnvironmentSentence(ctx: ComposeContext): string {
+function textureEnvironmentSentence(ctx: ComposeContext, locale: Locale): string {
   const { selections } = ctx;
-  const textures = selectedLabels(findGroup("texture"), selections);
-  const environment = selectedLabel(findGroup("environment"), selections);
+  const textures = labels("texture", selections, locale);
+  const environment = label("environment", selections, locale);
+
+  if (locale === "es") {
+    const parts: string[] = [];
+    if (textures.length) parts.push(`texturas ${joinNatural(textures, "es").toLowerCase()}`);
+    if (environment) parts.push(`ambientada en un entorno de ${environment.toLowerCase()}`);
+    if (parts.length === 0) return "";
+    return capitalizeFirst(`Incluye ${joinNatural(parts, "es")}.`);
+  }
 
   const parts: string[] = [];
   if (textures.length) parts.push(`${joinNatural(textures).toLowerCase()} textures`);
@@ -572,10 +616,18 @@ function textureEnvironmentSentence(ctx: ComposeContext): string {
   return capitalizeFirst(`Feature ${joinNatural(parts)}.`);
 }
 
-function emotionAudienceSentence(ctx: ComposeContext): string {
+function emotionAudienceSentence(ctx: ComposeContext, locale: Locale): string {
   const { selections } = ctx;
-  const emotions = selectedLabels(findGroup("emotion"), selections);
-  const audience = selectedLabel(findGroup("audience"), selections);
+  const emotions = labels("emotion", selections, locale);
+  const audience = label("audience", selections, locale);
+
+  if (locale === "es") {
+    const parts: string[] = [];
+    if (emotions.length) parts.push(`una sensación de ${joinNatural(emotions, "es").toLowerCase()}`);
+    if (audience) parts.push(`conecte con ${audience.toLowerCase()}`);
+    if (parts.length === 0) return "";
+    return capitalizeFirst(`La imagen debe transmitir ${joinNatural(parts, "es")}.`);
+  }
 
   const parts: string[] = [];
   if (emotions.length) parts.push(`a feeling of ${joinNatural(emotions).toLowerCase()}`);
@@ -588,6 +640,14 @@ function article(word: string): string {
   return /^[aeiou]/i.test(word.trim()) ? "an" : "a";
 }
 
+/** Best-effort "la {subject}" prefix for Spanish sentences referring back to the chosen subject.
+ *  We don't track grammatical gender for custom/free-text subjects, so this always uses the
+ *  feminine article, which is correct for every built-in subject option (pulsera, pieza, colección, etc.)
+ *  and reads acceptably even for the rare masculine custom entry. */
+function addSpanishArticle(subject: string): string {
+  return `la ${subject.toLowerCase()}`;
+}
+
 function capitalizeFirst(s: string): string {
   if (!s) return s;
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -595,13 +655,78 @@ function capitalizeFirst(s: string): string {
 
 function buildInstructional(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
   const { selections, brand } = ctx;
+  const locale: Locale = ctx.locale ?? "en";
   const platform = ctx.platform!;
-  const subject = selectedLabel(findGroup("subject"), selections) || "jewelry piece";
-  const goal = selectedLabel(findGroup("goal"), selections);
-  const styles = selectedLabels(findGroup("style"), selections);
-  const moods = selectedLabels(findGroup("mood"), selections);
-  const lighting = selectedLabel(findGroup("lighting"), selections);
-  const palette = selectedLabels(findGroup("palette"), selections);
+  const subject = label("subject", selections, locale) || (locale === "es" ? "la joya" : "jewelry piece");
+  const goal = label("goal", selections, locale);
+  const styles = labels("style", selections, locale);
+  const moods = labels("mood", selections, locale);
+  const lighting = label("lighting", selections, locale);
+  const palette = labels("palette", selections, locale);
+
+  const cameraSent = cameraSentence(ctx, subject, locale);
+  const textureEnvSent = textureEnvironmentSentence(ctx, locale);
+  const emotionAudienceSent = emotionAudienceSentence(ctx, locale);
+  const typographySent = typographySentence(ctx, locale);
+  const brandSentence = brandContextSentence(brand, locale);
+  const modeSentence = modeDirective(mode, locale);
+
+  if (locale === "es") {
+    const brandName = brand.brandName || "la marca";
+    const styleText = styles.length ? joinNatural(styles, "es").toLowerCase() : "editorial premium";
+    const paletteText = palette.length ? joinNatural(palette, "es").toLowerCase() : "tonos neutros cálidos";
+
+    const opening =
+      mode === "viral"
+        ? `Crea una fotografía de producto ${styleText} audaz y llamativa de ${subject.toLowerCase()} artesanal para ${brandName}, diseñada para captar la atención en un feed saturado de contenido.`
+        : mode === "creative"
+        ? `Crea una fotografía ${styleText} imaginativa y con dirección artística de ${subject.toLowerCase()} artesanal para ${brandName}, explorando un concepto visual inesperado pero elegante.`
+        : `Crea una fotografía de producto ${styleText} de altísima gama de ${subject.toLowerCase()} artesanal para ${brandName}.`;
+
+    const moodSentence = moods.length
+      ? `El ambiente general debe sentirse ${joinNatural(moods, "es").toLowerCase()}.`
+      : "";
+
+    const lightingSentence = lighting
+      ? `Ilumina la escena con luz de ${lighting.toLowerCase()}, creando reflejos suaves y favorecedores sobre la pieza y una sensación de profundidad.`
+      : "Usa una luz suave y favorecedora que cree reflejos delicados y una sensación de profundidad.";
+
+    const goalSentence = goal
+      ? `La imagen debe estar optimizada para ${goal.toLowerCase().replace(/-/g, " ")}, sintiéndose intencional y fiel a ese objetivo.`
+      : "";
+
+    const compositionSentence =
+      mode === "viral"
+        ? "La composición debe sentirse inconfundible y fácil de compartir, con alto contraste, un punto focal claro y un impacto visual inmediato en el primer medio segundo de scroll."
+        : mode === "creative"
+        ? "La composición debe sentirse editorial y expresiva, inspirada en campañas de alta moda, dejando espacio para la interpretación artística en el encuadre y el estilismo."
+        : "La composición debe sentirse premium y editorial, inspirada en campañas de joyería de lujo de marcas como Cartier y Tiffany, manteniendo una estética cálida y artesanal.";
+
+    const paletteSentence = `La paleta de colores está compuesta por ${paletteText}. Usa texturas realistas, reflejos naturales y evita el desorden o elementos de fondo que distraigan.`;
+
+    const aspect =
+      platform.id === "gemini" || platform.id === "chatgpt" || platform.id === "claude"
+        ? "Compón en formato vertical 4:5, optimizado para el feed y las Historias de Instagram."
+        : "";
+
+    return [
+      opening,
+      moodSentence,
+      lightingSentence,
+      cameraSent,
+      compositionSentence,
+      textureEnvSent,
+      paletteSentence,
+      emotionAudienceSent,
+      typographySent,
+      goalSentence,
+      brandSentence,
+      modeSentence,
+      aspect,
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
 
   const brandName = brand.brandName || "the brand";
   const styleText = styles.length ? joinNatural(styles).toLowerCase() : "premium editorial";
@@ -622,16 +747,9 @@ function buildInstructional(ctx: ComposeContext, mode: "reliable" | "creative" |
     ? `Light the scene with ${lighting.toLowerCase()} light, creating soft, flattering highlights across the piece and a sense of depth.`
     : `Use soft, flattering light that creates gentle highlights and a sense of depth.`;
 
-  const cameraSent = cameraSentence(ctx, subject);
-  const textureEnvSent = textureEnvironmentSentence(ctx);
-  const emotionAudienceSent = emotionAudienceSentence(ctx);
-  const typographySent = typographySentence(ctx);
-
   const goalSentence = goal
     ? `The image should be optimized for ${goal.toLowerCase().replace(/-/g, " ")}, feeling intentional and on-brief for that objective.`
     : "";
-
-  const brandSentence = brandContextSentence(brand);
 
   const compositionSentence =
     mode === "viral"
@@ -641,8 +759,6 @@ function buildInstructional(ctx: ComposeContext, mode: "reliable" | "creative" |
       : `The composition should feel premium and editorial, inspired by luxury jewelry campaigns from brands like Cartier and Tiffany while maintaining a warm, artisan aesthetic.`;
 
   const paletteSentence = `Color palette consists of ${paletteText}. Use realistic textures, natural reflections, and avoid clutter or distracting background elements.`;
-
-  const modeSentence = modeDirective(mode);
 
   const aspect =
     platform.id === "gemini" || platform.id === "chatgpt" || platform.id === "claude"
@@ -670,20 +786,48 @@ function buildInstructional(ctx: ComposeContext, mode: "reliable" | "creative" |
 
 function buildKeyword(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
   const { selections, brand } = ctx;
+  const locale: Locale = ctx.locale ?? "en";
   const platform = ctx.platform!;
-  const subject = selectedLabel(findGroup("subject"), selections) || "jewelry";
-  const styles = selectedLabels(findGroup("style"), selections);
-  const moods = selectedLabels(findGroup("mood"), selections);
-  const lighting = selectedLabel(findGroup("lighting"), selections);
-  const palette = selectedLabels(findGroup("palette"), selections);
-  const camera = selectedLabel(findGroup("camera"), selections);
-  const lens = selectedLabel(findGroup("lens"), selections);
-  const composition = selectedLabels(findGroup("composition"), selections);
-  const texture = selectedLabels(findGroup("texture"), selections);
-  const environment = selectedLabel(findGroup("environment"), selections);
-  const emotion = selectedLabels(findGroup("emotion"), selections);
-  const fontStyle = selectedLabel(findGroup("fontStyle"), selections);
-  const textEffects = selectedLabels(findGroup("textEffects"), selections);
+  const subject = label("subject", selections, locale) || (locale === "es" ? "joyería" : "jewelry");
+  const styles = labels("style", selections, locale);
+  const moods = labels("mood", selections, locale);
+  const lighting = label("lighting", selections, locale);
+  const palette = labels("palette", selections, locale);
+  const camera = label("camera", selections, locale);
+  const lens = label("lens", selections, locale);
+  const composition = labels("composition", selections, locale);
+  const texture = labels("texture", selections, locale);
+  const environment = label("environment", selections, locale);
+  const emotion = labels("emotion", selections, locale);
+  const fontStyle = label("fontStyle", selections, locale);
+  const textEffects = labels("textEffects", selections, locale);
+
+  const suffix = platformSuffix(platform);
+
+  if (locale === "es") {
+    const keywords = [
+      `${subject.toLowerCase()} artesanal`,
+      ...styles.map((s) => s.toLowerCase()),
+      ...moods.map((m) => `ambiente ${m.toLowerCase()}`),
+      camera ? `toma ${camera.toLowerCase()}` : "toma de producto",
+      lens ? `lente ${lens}` : "",
+      lighting ? `iluminación de ${lighting.toLowerCase()}` : "iluminación natural suave",
+      ...composition.map((c) => `composición ${c.toLowerCase()}`),
+      ...palette.map((p) => `paleta de color ${p.toLowerCase()}`),
+      ...texture.map((t) => `textura ${t.toLowerCase()}`),
+      environment ? `ambientación de ${environment.toLowerCase()}` : "",
+      ...emotion.map((e) => `evoca ${e.toLowerCase()}`),
+      fontStyle ? `tipografía ${fontStyle.toLowerCase()}` : "",
+      ...textEffects.map((t) => `efecto de texto ${t.toLowerCase()}`),
+      ...brandKeywords(brand).map((k) => k.toLowerCase()),
+      modeKeyword(mode, "es"),
+      "fotografía de producto profesional",
+      "profundidad de campo reducida",
+      "ultra detallado",
+      "8k",
+    ];
+    return joinKeywords(keywords) + (suffix ? `, ${suffix}` : "");
+  }
 
   const keywords = [
     `handcrafted ${subject.toLowerCase()}`,
@@ -707,7 +851,6 @@ function buildKeyword(ctx: ComposeContext, mode: "reliable" | "creative" | "vira
     "8k",
   ];
 
-  const suffix = platformSuffix(platform);
   return joinKeywords(keywords) + (suffix ? `, ${suffix}` : "");
 }
 

@@ -1,5 +1,7 @@
-import { ComposeContext, FilterGroup, GeneratorBlueprint } from "@/lib/types";
-import { brandContextSentence, modeDirective, selectedLabel } from "@/lib/prompt-engine";
+import { ComposeContext, FilterGroup, GeneratorBlueprint, Locale } from "@/lib/types";
+import { brandContextSentence, modeDirective, selectedLabelLocalized } from "@/lib/prompt-engine";
+
+const SLUG = "poll";
 
 export const pollGroups: FilterGroup[] = [
   {
@@ -51,24 +53,72 @@ function findGroup(id: string) {
   return pollGroups.find((g) => g.id === id)!;
 }
 
-const FORMAT_TEXT: Record<string, string> = {
+function label(id: string, selections: ComposeContext["selections"], locale: Locale) {
+  return selectedLabelLocalized(findGroup(id), selections, SLUG, locale);
+}
+
+const FORMAT_TEXT_EN: Record<string, string> = {
   "this-or-that": "using simple two-option \"this or that\" comparisons",
   "yes-no": "using quick yes/no questions",
   "rating-scale": "using rating-scale or slider-style questions",
   "quiz-style": "using playful quiz-style questions with a reveal",
 };
 
-function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+const FORMAT_TEXT_ES: Record<string, string> = {
+  "this-or-that": "usando comparaciones sencillas de dos opciones tipo \"esto o aquello\"",
+  "yes-no": "usando preguntas rápidas de sí o no",
+  "rating-scale": "usando preguntas con escala de calificación o tipo deslizador",
+  "quiz-style": "usando preguntas divertidas tipo cuestionario con una revelación",
+};
+
+function buildEs(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
   const { selections, brand } = ctx;
-  const product = selectedLabel(findGroup("product"), selections) || "collection";
-  const goal = selectedLabel(findGroup("goal"), selections);
-  const audience = selectedLabel(findGroup("audience"), selections);
+  const product = label("product", selections, "es") || "colección";
+  const goal = label("goal", selections, "es");
+  const audience = label("audience", selections, "es");
+  const formatKey = selections.format?.[0];
+
+  const brandName = brand.brandName || "la marca";
+  const goalText = goal ? goal.toLowerCase().replace(/-/g, " ") : "interacción";
+  const audienceText = audience ? audience.toLowerCase() : "los seguidores";
+  const formatText = formatKey ? FORMAT_TEXT_ES[formatKey] ?? "" : "";
+
+  const count = mode === "viral" ? "12" : mode === "creative" ? "8" : "5";
+
+  const opening =
+    mode === "viral"
+      ? `Genera ${count} encuestas de Historias de Instagram audaces y muy compartibles para ${product.toLowerCase()} de ${brandName}, diseñadas para maximizar respuestas, compartidos y visualizaciones repetidas.`
+      : mode === "creative"
+      ? `Genera ${count} encuestas de Historias de Instagram imaginativas para ${product.toLowerCase()} de ${brandName}, explorando ángulos divertidos o inesperados que sigan siendo fieles a la marca.`
+      : `Genera ${count} encuestas de Historias de Instagram confiables para ${product.toLowerCase()} de ${brandName}.`;
+
+  const purposeSentence = `El objetivo principal es ${goalText}, dirigido a ${audienceText}.`;
+
+  const formatSentence = formatText
+    ? `Escribe las encuestas ${formatText}, con cada pregunta lo bastante corta para leerse en menos de 3 segundos.`
+    : "Mantén cada pregunta lo bastante corta para leerse en menos de 3 segundos.";
+
+  const outputSentence =
+    "Para cada encuesta, incluye el texto de la pregunta y las dos opciones de respuesta, en formato de lista numerada.";
+
+  const brandSentence = brandContextSentence(brand, "es");
+
+  return [opening, purposeSentence, formatSentence, outputSentence, brandSentence, modeDirective(mode, "es")]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildEn(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+  const { selections, brand } = ctx;
+  const product = label("product", selections, "en") || "collection";
+  const goal = label("goal", selections, "en");
+  const audience = label("audience", selections, "en");
   const formatKey = selections.format?.[0];
 
   const brandName = brand.brandName || "the brand";
   const goalText = goal ? goal.toLowerCase().replace(/-/g, " ") : "engagement";
   const audienceText = audience ? audience.toLowerCase() : "followers";
-  const formatText = formatKey ? FORMAT_TEXT[formatKey] ?? "" : "";
+  const formatText = formatKey ? FORMAT_TEXT_EN[formatKey] ?? "" : "";
 
   const count = mode === "viral" ? "12" : mode === "creative" ? "8" : "5";
 
@@ -88,11 +138,15 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
   const outputSentence =
     "For each poll, provide the question text and both answer options, formatted as a numbered list.";
 
-  const brandSentence = brandContextSentence(brand);
+  const brandSentence = brandContextSentence(brand, "en");
 
-  return [opening, purposeSentence, formatSentence, outputSentence, brandSentence, modeDirective(mode)]
+  return [opening, purposeSentence, formatSentence, outputSentence, brandSentence, modeDirective(mode, "en")]
     .filter(Boolean)
     .join(" ");
+}
+
+function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+  return (ctx.locale ?? "en") === "es" ? buildEs(ctx, mode) : buildEn(ctx, mode);
 }
 
 export const pollBlueprint: GeneratorBlueprint = {

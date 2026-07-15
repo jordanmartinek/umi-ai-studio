@@ -1,6 +1,6 @@
 "use client";
 
-import { BrandProfile, EMPTY_BRAND_PROFILE } from "@/lib/types";
+import { BrandProfile, EMPTY_BRAND_PROFILE, Locale } from "@/lib/types";
 
 const BRAND_KEY = "umi.brandProfile.v1";
 
@@ -33,10 +33,32 @@ const DEFAULT_UMI_PROFILE: BrandProfile = {
   usp: "Hand-selected natural stones, small-batch craftsmanship, and a warm, personal brand voice",
 };
 
-export function loadOrSeedBrandProfile(): BrandProfile {
+// A Spanish equivalent seed profile, so a user who has never filled in their
+// own Brand Profile still gets a fully Spanish-language generated prompt
+// when the site is set to Spanish, rather than English seed text leaking
+// into an otherwise-translated result.
+const DEFAULT_UMI_PROFILE_ES: BrandProfile = {
+  brandName: "Umi Accessories",
+  tagline: "Joyería artesanal con significado",
+  voice: "Lujo cálido, elegante, narrativo",
+  audience: "Mujeres de 25 a 45 años que valoran la artesanía y la expresión personal",
+  products: "Pulseras, collares y aretes de piedras naturales",
+  materials: "Piedras naturales, detalles en gold-filled y plata esterlina",
+  colorPalette: "Crema, dorado cálido, oro rosa y tonos tierra",
+  mission: "Crear joyería artesanal con significado que cuenta una historia",
+  usp: "Piedras naturales seleccionadas a mano, producción en pequeños lotes y una voz de marca cálida y personal",
+};
+
+/** Note: `BrandProfile` fields (voice, audience, mission, etc.) are free text
+ *  the user types into the Brand Profile page, so they can't be
+ *  auto-translated once customized — only this seed/placeholder data has a
+ *  Spanish counterpart. Once a user saves their own profile, whatever
+ *  language they typed it in is what appears in every generated prompt. */
+export function loadOrSeedBrandProfile(locale: Locale = "en"): BrandProfile {
   const current = loadBrandProfile();
   const hasAny = Object.values(current).some((v) => v && v.trim().length > 0);
-  return hasAny ? current : DEFAULT_UMI_PROFILE;
+  if (hasAny) return current;
+  return locale === "es" ? DEFAULT_UMI_PROFILE_ES : DEFAULT_UMI_PROFILE;
 }
 
-export { DEFAULT_UMI_PROFILE };
+export { DEFAULT_UMI_PROFILE, DEFAULT_UMI_PROFILE_ES };

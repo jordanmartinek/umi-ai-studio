@@ -1,5 +1,5 @@
-import { CONTENT_GOALS, FilterGroup, WRITING_PERSONALITIES } from "@/lib/types";
-import { personalityPhrase, selectedLabels } from "@/lib/prompt-engine";
+import { CONTENT_GOALS, FilterGroup, Locale, WRITING_PERSONALITIES } from "@/lib/types";
+import { personalityPhrase, selectedLabelsLocalized } from "@/lib/prompt-engine";
 
 /**
  * Shared filter groups reused across every text generator (Caption, Story,
@@ -31,8 +31,15 @@ export function goalGroup(categoryId?: string): FilterGroup {
   };
 }
 
-/** Resolve the combined personality phrase (e.g. "an elegant yet witty tone") from selections. */
-export function resolvePersonalityPhrase(group: FilterGroup, selections: Record<string, string[]>): string {
-  const traits = selectedLabels(group, selections);
-  return personalityPhrase(traits);
+/** Resolve the combined personality phrase (e.g. "an elegant yet witty tone") from selections,
+ *  in the active locale. `generatorSlug` is needed to look up the correct translated trait
+ *  labels from the dictionaries. */
+export function resolvePersonalityPhrase(
+  group: FilterGroup,
+  selections: Record<string, string[]>,
+  generatorSlug: string,
+  locale: Locale = "en"
+): string {
+  const traits = selectedLabelsLocalized(group, selections, generatorSlug, locale);
+  return personalityPhrase(traits, locale);
 }

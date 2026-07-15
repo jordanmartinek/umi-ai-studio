@@ -1,6 +1,8 @@
-import { ComposeContext, FilterGroup, GeneratorBlueprint } from "@/lib/types";
-import { brandContextSentence, modeDirective, selectedLabel } from "@/lib/prompt-engine";
+import { ComposeContext, FilterGroup, GeneratorBlueprint, Locale } from "@/lib/types";
+import { brandContextSentence, modeDirective, selectedLabelLocalized } from "@/lib/prompt-engine";
 import { personalityGroup, resolvePersonalityPhrase } from "@/lib/generators/shared";
+
+const SLUG = "product-description";
 
 export const productDescriptionGroups: FilterGroup[] = [
   {
@@ -52,13 +54,49 @@ function findGroup(id: string) {
   return productDescriptionGroups.find((g) => g.id === id)!;
 }
 
-function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+function label(id: string, selections: ComposeContext["selections"], locale: Locale) {
+  return selectedLabelLocalized(findGroup(id), selections, SLUG, locale);
+}
+
+function buildEs(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
   const { selections, brand } = ctx;
-  const stone = selectedLabel(findGroup("stone"), selections) || "natural gemstone";
-  const productType = selectedLabel(findGroup("productType"), selections) || "piece";
-  const personalityText = resolvePersonalityPhrase(findGroup("personality"), selections);
+  const stone = label("stone", selections, "es") || "la piedra natural";
+  const productType = label("productType", selections, "es") || "la pieza";
+  const personalityText = resolvePersonalityPhrase(findGroup("personality"), selections, SLUG, "es");
   const seo = selections.seo?.[0] === "yes";
-  const platform = selectedLabel(findGroup("platform"), selections);
+  const platform = label("platform", selections, "es");
+
+  const brandName = brand.brandName || "la marca";
+  const platformText = platform ? platform : "una tienda en línea";
+
+  const opening =
+    mode === "viral"
+      ? `Escribe una descripción de producto para ${platformText} audaz y orientada a beneficios de ${productType.toLowerCase()} de ${stone.toLowerCase()} de ${brandName}, diseñada para convertir a quienes navegan en compradores con ganchos emocionales fuertes.`
+      : mode === "creative"
+      ? `Escribe una descripción de producto para ${platformText} evocadora y narrativa de ${productType.toLowerCase()} de ${stone.toLowerCase()} de ${brandName}, incorporando el significado o la leyenda de la piedra ${stone.toLowerCase()}.`
+      : `Escribe una descripción de producto para ${platformText} pulida de ${productType.toLowerCase()} de ${stone.toLowerCase()} de ${brandName}, usando ${personalityText || "un tono elegante"}.`;
+
+  const structureSentence =
+    "Incluye un titular breve y llamativo, 2-3 frases de texto persuasivo sobre los materiales, la artesanía y cómo se siente al usarla, y una lista de 3-4 detalles clave (materiales, tallas, instrucciones de cuidado).";
+
+  const seoSentence = seo
+    ? "Incorpora de forma natural palabras clave de SEO relevantes para compradoras de joyería artesanal de piedras naturales sin saturar de palabras clave, y sugiere una meta descripción concisa de menos de 155 caracteres."
+    : "";
+
+  const brandSentence = brandContextSentence(brand, "es");
+
+  return [opening, structureSentence, seoSentence, brandSentence, modeDirective(mode, "es")]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildEn(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+  const { selections, brand } = ctx;
+  const stone = label("stone", selections, "en") || "natural gemstone";
+  const productType = label("productType", selections, "en") || "piece";
+  const personalityText = resolvePersonalityPhrase(findGroup("personality"), selections, SLUG, "en");
+  const seo = selections.seo?.[0] === "yes";
+  const platform = label("platform", selections, "en");
 
   const brandName = brand.brandName || "the brand";
   const platformText = platform ? platform : "an ecommerce storefront";
@@ -77,11 +115,15 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
     ? "Naturally incorporate relevant SEO keywords for handmade gemstone jewelry shoppers without keyword-stuffing, and suggest a concise meta description under 155 characters."
     : "";
 
-  const brandSentence = brandContextSentence(brand);
+  const brandSentence = brandContextSentence(brand, "en");
 
-  return [opening, structureSentence, seoSentence, brandSentence, modeDirective(mode)]
+  return [opening, structureSentence, seoSentence, brandSentence, modeDirective(mode, "en")]
     .filter(Boolean)
     .join(" ");
+}
+
+function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+  return (ctx.locale ?? "en") === "es" ? buildEs(ctx, mode) : buildEn(ctx, mode);
 }
 
 export const productDescriptionBlueprint: GeneratorBlueprint = {

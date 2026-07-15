@@ -12,8 +12,8 @@ import { enhancePrompt, EnhancerContentType, guessContentType } from "@/lib/enha
 import { GenerationMode } from "@/lib/types";
 
 export default function EnhancePage() {
-  const { dict } = useLocale();
-  const brand = useMemo(() => loadOrSeedBrandProfile(), []);
+  const { dict, locale } = useLocale();
+  const brand = useMemo(() => loadOrSeedBrandProfile(locale), [locale]);
 
   const [input, setInput] = useState("");
   const [contentType, setContentType] = useState<EnhancerContentType>("image");
@@ -34,7 +34,7 @@ export default function EnhancePage() {
 
   function handleEnhance() {
     if (!input.trim()) return;
-    setResults(enhancePrompt(input, contentType, brand));
+    setResults(enhancePrompt(input, contentType, brand, locale));
   }
 
   return (

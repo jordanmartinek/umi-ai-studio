@@ -1,12 +1,14 @@
-import { ComposeContext, FilterGroup, GeneratorBlueprint } from "@/lib/types";
+import { ComposeContext, FilterGroup, GeneratorBlueprint, Locale } from "@/lib/types";
 import {
   brandContextSentence,
   joinNatural,
   modeDirective,
-  selectedLabel,
-  selectedLabels,
+  selectedLabelLocalized,
+  selectedLabelsLocalized,
 } from "@/lib/prompt-engine";
 import { goalGroup, personalityGroup, resolvePersonalityPhrase } from "@/lib/generators/shared";
+
+const SLUG = "caption";
 
 export const captionGroups: FilterGroup[] = [
   {
@@ -73,7 +75,15 @@ function findGroup(id: string) {
   return captionGroups.find((g) => g.id === id)!;
 }
 
-const CTA_TEXT: Record<string, string> = {
+function label(id: string, selections: ComposeContext["selections"], locale: Locale) {
+  return selectedLabelLocalized(findGroup(id), selections, SLUG, locale);
+}
+
+function labels(id: string, selections: ComposeContext["selections"], locale: Locale) {
+  return selectedLabelsLocalized(findGroup(id), selections, SLUG, locale);
+}
+
+const CTA_TEXT_EN: Record<string, string> = {
   "shop-now": "encouraging followers to shop the piece now",
   comment: "encouraging followers to comment below",
   share: "encouraging followers to share it with someone who'd love it",
@@ -81,20 +91,82 @@ const CTA_TEXT: Record<string, string> = {
   "save-this-post": "encouraging followers to save the post for later",
 };
 
-function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+const CTA_TEXT_ES: Record<string, string> = {
+  "shop-now": "animando a los seguidores a comprar la pieza ahora",
+  comment: "animando a los seguidores a comentar abajo",
+  share: "animando a los seguidores a compartirla con alguien a quien le encantaría",
+  "tag-a-friend": "animando a los seguidores a etiquetar a una amiga que la necesite",
+  "save-this-post": "animando a los seguidores a guardar la publicación para más tarde",
+};
+
+function buildEs(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
   const { selections, brand } = ctx;
-  const subject = selectedLabel(findGroup("subject"), selections) || "piece";
-  const personalityText = resolvePersonalityPhrase(findGroup("personality"), selections);
-  const length = selectedLabel(findGroup("length"), selections) || "Medium";
-  const audience = selectedLabels(findGroup("audience"), selections);
-  const emotion = selectedLabels(findGroup("emotion"), selections);
-  const goal = selectedLabel(findGroup("contentGoal"), selections);
+  const subject = label("subject", selections, "es") || "la pieza";
+  const personalityText = resolvePersonalityPhrase(findGroup("personality"), selections, SLUG, "es");
+  const length = selections.length?.[0] || "medium";
+  const audience = labels("audience", selections, "es");
+  const emotion = labels("emotion", selections, "es");
+  const goal = label("contentGoal", selections, "es");
+
+  const brandName = brand.brandName || "la marca";
+  const audienceText = audience.length ? joinNatural(audience, "es").toLowerCase() : "los seguidores";
+  const emotionText = emotion.length ? joinNatural(emotion, "es").toLowerCase() : "confianza";
+  const ctaKey = selections.cta?.[0];
+  const ctaText = ctaKey ? CTA_TEXT_ES[ctaKey] ?? "" : "";
+
+  const lengthGuidance =
+    length === "short"
+      ? "Manténla en 1-2 frases contundentes."
+      : length === "long"
+      ? "Escribe 4-6 frases con espacio para una pequeña historia o un detalle que ambiente la escena."
+      : "Escribe 2-4 frases que equilibren la brevedad con personalidad.";
+
+  const opening =
+    mode === "viral"
+      ? `Escribe una descripción de Instagram audaz y llamativa para ${subject.toLowerCase()} de ${brandName}, diseñada para generar comentarios, compartidos y guardados.`
+      : mode === "creative"
+      ? `Escribe una descripción de Instagram imaginativa y narrativa para ${subject.toLowerCase()} de ${brandName}, con un ángulo fresco sin perder la esencia de la marca.`
+      : `Escribe una descripción de Instagram para ${subject.toLowerCase()} de ${brandName}, usando ${personalityText || "un tono cálido y elegante"}.`;
+
+  const audienceSentence = `Dirígete directamente a ${audienceText} y busca transmitir una sensación de ${emotionText}.`;
+
+  const goalSentence = goal
+    ? `El objetivo principal de la descripción es ${goal.toLowerCase().replace(/-/g, " ")}.`
+    : "";
+
+  const brandSentence = brandContextSentence(brand, "es");
+
+  const ctaSentence = ctaText
+    ? `Termina con un llamado a la acción claro, ${ctaText}.`
+    : "Termina con un llamado a la acción natural y sin presión.";
+
+  return [
+    opening,
+    audienceSentence,
+    lengthGuidance,
+    goalSentence,
+    brandSentence,
+    ctaSentence,
+    modeDirective(mode, "es"),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildEn(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+  const { selections, brand } = ctx;
+  const subject = label("subject", selections, "en") || "piece";
+  const personalityText = resolvePersonalityPhrase(findGroup("personality"), selections, SLUG, "en");
+  const length = selections.length?.[0] || "medium";
+  const audience = labels("audience", selections, "en");
+  const emotion = labels("emotion", selections, "en");
+  const goal = label("contentGoal", selections, "en");
 
   const brandName = brand.brandName || "the brand";
   const audienceText = audience.length ? joinNatural(audience).toLowerCase() : "followers";
   const emotionText = emotion.length ? joinNatural(emotion).toLowerCase() : "confidence";
-  const ctaKey = ctx.selections.cta?.[0];
-  const ctaText = ctaKey ? CTA_TEXT[ctaKey] ?? "" : "";
+  const ctaKey = selections.cta?.[0];
+  const ctaText = ctaKey ? CTA_TEXT_EN[ctaKey] ?? "" : "";
 
   const lengthGuidance =
     length === "short"
@@ -116,7 +188,7 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
     ? `The caption's primary objective is to ${goal.toLowerCase().replace(/-/g, " ")}.`
     : "";
 
-  const brandSentence = brandContextSentence(brand);
+  const brandSentence = brandContextSentence(brand, "en");
 
   const ctaSentence = ctaText
     ? `End with a clear call-to-action ${ctaText}.`
@@ -129,10 +201,14 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
     goalSentence,
     brandSentence,
     ctaSentence,
-    modeDirective(mode),
+    modeDirective(mode, "en"),
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+  return (ctx.locale ?? "en") === "es" ? buildEs(ctx, mode) : buildEn(ctx, mode);
 }
 
 export const captionBlueprint: GeneratorBlueprint = {

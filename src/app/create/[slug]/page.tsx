@@ -62,7 +62,7 @@ function GeneratorForm({
   meta: ContentTypeMeta;
   templateId: string | null;
 }) {
-  const { dict } = useLocale();
+  const { dict, locale } = useLocale();
 
   const initialSelections = useMemo<Selections>(() => {
     if (!templateId) return {};
@@ -78,7 +78,7 @@ function GeneratorForm({
   const [selections, setSelections] = useState<Selections>(initialSelections);
   const [results, setResults] = useState<Record<GenerationMode, string> | null>(null);
 
-  const brand = useMemo(() => loadOrSeedBrandProfile(), []);
+  const brand = useMemo(() => loadOrSeedBrandProfile(locale), [locale]);
 
   function handleChange(groupId: string, values: string[]) {
     setSelections((prev) => ({ ...prev, [groupId]: values }));
@@ -97,7 +97,7 @@ function GeneratorForm({
   const canGenerate = requiredGroups.every((g) => (selections[g.id] ?? []).length > 0);
 
   function handleGenerate() {
-    const composed = blueprint.compose({ selections, brand, platform });
+    const composed = blueprint.compose({ selections, brand, platform, locale });
     setResults(composed);
   }
 

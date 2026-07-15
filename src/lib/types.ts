@@ -1,5 +1,10 @@
 // Shared domain types for the Umi AI Studio prompt engine.
 
+/** The active UI/output language. Defined here (rather than in i18n/locale-context)
+ *  so the prompt engine and every generator can depend on it without importing
+ *  the React-specific locale context module. */
+export type Locale = "en" | "es";
+
 export type GenerationMode = "reliable" | "creative" | "viral";
 
 export interface ModeMeta {
@@ -133,6 +138,9 @@ export interface ComposeContext {
   /** Present only when the generator defines a platformGroupId. */
   platform?: PlatformMeta;
   extraNotes?: string;
+  /** The language the generated prompt text itself should be written in.
+   *  Defaults to "en" if omitted (all generators treat a missing locale as English). */
+  locale?: Locale;
 }
 
 export interface BrandProfile {

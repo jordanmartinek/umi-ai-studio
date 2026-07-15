@@ -2,8 +2,9 @@
 
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { Dictionary, en, es } from "@/lib/i18n/dictionaries";
+import { Locale } from "@/lib/types";
 
-export type Locale = "en" | "es";
+export type { Locale };
 
 const DICTIONARIES: Record<Locale, Dictionary> = { en, es };
 const LOCALE_KEY = "umi.locale.v1";

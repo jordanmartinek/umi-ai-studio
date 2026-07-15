@@ -1,6 +1,8 @@
-import { ComposeContext, FilterGroup, GeneratorBlueprint } from "@/lib/types";
-import { article, brandContextSentence, modeDirective, selectedLabel } from "@/lib/prompt-engine";
+import { ComposeContext, FilterGroup, GeneratorBlueprint, Locale } from "@/lib/types";
+import { article, brandContextSentence, modeDirective, selectedLabelLocalized } from "@/lib/prompt-engine";
 import { goalGroup, resolvePersonalityPhrase, personalityGroup } from "@/lib/generators/shared";
+
+const SLUG = "story";
 
 export const storyGroups: FilterGroup[] = [
   {
@@ -44,14 +46,62 @@ function findGroup(id: string) {
   return storyGroups.find((g) => g.id === id)!;
 }
 
-function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+function label(id: string, selections: ComposeContext["selections"], locale: Locale) {
+  return selectedLabelLocalized(findGroup(id), selections, SLUG, locale);
+}
+
+function buildEs(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
   const { selections, brand } = ctx;
-  const occasion = selectedLabel(findGroup("occasion"), selections) || "an announcement";
-  const theme = selectedLabel(findGroup("theme"), selections);
-  const personalityText = resolvePersonalityPhrase(findGroup("personality"), selections);
-  const length = selectedLabel(findGroup("length"), selections) || "5 slides";
-  const slideCount = length.split(" ")[0];
-  const goal = selectedLabel(findGroup("contentGoal"), selections);
+  const occasion = label("occasion", selections, "es") || "un anuncio";
+  const theme = label("theme", selections, "es");
+  const personalityText = resolvePersonalityPhrase(findGroup("personality"), selections, SLUG, "es");
+  const length = selections.length?.[0] || "5-slides";
+  const slideCount = length.split("-")[0];
+  const goal = label("contentGoal", selections, "es");
+
+  const brandName = brand.brandName || "la marca";
+  const themeText = theme ? theme.toLowerCase() : "narrativa";
+
+  const opening =
+    mode === "viral"
+      ? `Escribe una secuencia de Historia de Instagram de ${slideCount} diapositivas audaz y muy atractiva para el momento "${occasion.toLowerCase()}" de ${brandName}, diseñada para mantener a los espectadores tocando hasta el final y compartiendo en su propia historia.`
+      : mode === "creative"
+      ? `Escribe una secuencia de Historia de Instagram de ${slideCount} diapositivas imaginativa para el momento "${occasion.toLowerCase()}" de ${brandName}, construida alrededor de un arco narrativo de ${themeText} con un giro creativo inesperado.`
+      : `Escribe una secuencia de Historia de Instagram de ${slideCount} diapositivas confiable para el momento "${occasion.toLowerCase()}" de ${brandName}, construida alrededor de un arco narrativo de ${themeText}.`;
+
+  const structureSentence =
+    "Estructúrala con un inicio claro (gancho), un desarrollo (genera interés / muestra el producto o el momento) y un cierre (un único llamado a la acción claro). Para cada diapositiva, incluye el texto en pantalla y una descripción breve de la imagen.";
+
+  const personalitySentence = personalityText
+    ? `Escríbela con ${personalityText} durante toda la secuencia.`
+    : "Escríbela con un tono cálido y elegante durante toda la secuencia.";
+
+  const goalSentence = goal
+    ? `El objetivo principal de la secuencia es ${goal.toLowerCase().replace(/-/g, " ")}.`
+    : "";
+
+  const brandSentence = brandContextSentence(brand, "es");
+
+  return [
+    opening,
+    structureSentence,
+    personalitySentence,
+    goalSentence,
+    brandSentence,
+    modeDirective(mode, "es"),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildEn(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+  const { selections, brand } = ctx;
+  const occasion = label("occasion", selections, "en") || "an announcement";
+  const theme = label("theme", selections, "en");
+  const personalityText = resolvePersonalityPhrase(findGroup("personality"), selections, SLUG, "en");
+  const length = selections.length?.[0] || "5-slides";
+  const slideCount = length.split("-")[0];
+  const goal = label("contentGoal", selections, "en");
 
   const brandName = brand.brandName || "the brand";
   const themeText = theme ? theme.toLowerCase() : "storytelling";
@@ -75,7 +125,7 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
     ? `The sequence's primary objective is to ${goal.toLowerCase().replace(/-/g, " ")}.`
     : "";
 
-  const brandSentence = brandContextSentence(brand);
+  const brandSentence = brandContextSentence(brand, "en");
 
   return [
     opening,
@@ -83,10 +133,14 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
     personalitySentence,
     goalSentence,
     brandSentence,
-    modeDirective(mode),
+    modeDirective(mode, "en"),
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+  return (ctx.locale ?? "en") === "es" ? buildEs(ctx, mode) : buildEn(ctx, mode);
 }
 
 export const storyBlueprint: GeneratorBlueprint = {

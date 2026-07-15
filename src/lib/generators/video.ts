@@ -3,16 +3,19 @@ import {
   FilterCategoryDef,
   FilterGroup,
   GeneratorBlueprint,
+  Locale,
   VIDEO_PLATFORMS,
 } from "@/lib/types";
 import {
   brandContextSentence,
   joinNatural,
   modeDirective,
-  selectedLabel,
-  selectedLabels,
+  selectedLabelLocalized,
+  selectedLabelsLocalized,
   videoPlatformDirective,
 } from "@/lib/prompt-engine";
+
+const SLUG = "video";
 
 /**
  * The Video generator mirrors the Image generator's "Creative Director"
@@ -294,21 +297,124 @@ function findGroup(id: string) {
   return videoGroups.find((g) => g.id === id)!;
 }
 
-function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+function label(id: string, selections: ComposeContext["selections"], locale: Locale) {
+  return selectedLabelLocalized(findGroup(id), selections, SLUG, locale);
+}
+
+function labels(id: string, selections: ComposeContext["selections"], locale: Locale) {
+  return selectedLabelsLocalized(findGroup(id), selections, SLUG, locale);
+}
+
+function capitalizeFirst(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function buildEs(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
   const { selections, brand } = ctx;
   const platform = ctx.platform!;
-  const subject = selectedLabel(findGroup("subject"), selections) || "jewelry piece";
-  const goal = selectedLabel(findGroup("goal"), selections);
-  const styles = selectedLabels(findGroup("style"), selections);
-  const cameraMovement = selectedLabel(findGroup("cameraMovement"), selections);
-  const motionTypes = selectedLabels(findGroup("motionType"), selections);
-  const pacing = selectedLabel(findGroup("pacing"), selections);
-  const moods = selectedLabels(findGroup("mood"), selections);
-  const lighting = selectedLabel(findGroup("lighting"), selections);
-  const palette = selectedLabels(findGroup("palette"), selections);
-  const environment = selectedLabel(findGroup("environment"), selections);
-  const emotions = selectedLabels(findGroup("emotion"), selections);
-  const audience = selectedLabel(findGroup("audience"), selections);
+  const subject = label("subject", selections, "es") || "la pieza de joyería";
+  const goal = label("goal", selections, "es");
+  const styles = labels("style", selections, "es");
+  const cameraMovement = label("cameraMovement", selections, "es");
+  const motionTypes = labels("motionType", selections, "es");
+  const pacing = label("pacing", selections, "es");
+  const moods = labels("mood", selections, "es");
+  const lighting = label("lighting", selections, "es");
+  const palette = labels("palette", selections, "es");
+  const environment = label("environment", selections, "es");
+  const emotions = labels("emotion", selections, "es");
+  const audience = label("audience", selections, "es");
+
+  const brandName = brand.brandName || "la marca";
+  const styleText = styles.length ? joinNatural(styles, "es").toLowerCase() : "editorial premium";
+  const paletteText = palette.length ? joinNatural(palette, "es").toLowerCase() : "tonos neutros cálidos";
+
+  const opening =
+    mode === "viral"
+      ? `Crea un video ${styleText} audaz y llamativo de ${subject.toLowerCase()} artesanal para ${brandName}, diseñado para captar la atención en el primer segundo.`
+      : mode === "creative"
+      ? `Crea un video ${styleText} imaginativo y con dirección artística de ${subject.toLowerCase()} artesanal para ${brandName}, explorando un concepto visual inesperado pero elegante.`
+      : `Crea un video ${styleText} de altísima gama de ${subject.toLowerCase()} artesanal para ${brandName}.`;
+
+  const cameraSentence = cameraMovement
+    ? `Usa un movimiento de cámara de ${cameraMovement.toLowerCase()}, manteniendo ${subject.toLowerCase()} claramente legible y en foco durante todo el clip.`
+    : `Usa un movimiento de cámara lento y deliberado, manteniendo ${subject.toLowerCase()} claramente legible y en foco durante todo el clip.`;
+
+  const motionSentence = motionTypes.length
+    ? `Da vida a la escena con ${joinNatural(motionTypes, "es").toLowerCase()}.`
+    : "";
+
+  const pacingSentence = pacing ? `El clip debe durar ${pacing.toLowerCase()}.` : "";
+
+  const moodSentence = moods.length
+    ? `El ambiente general debe sentirse ${joinNatural(moods, "es").toLowerCase()}.`
+    : "";
+
+  const lightingSentence = lighting
+    ? `Ilumina la escena con luz de ${lighting.toLowerCase()}, manteniendo la iluminación consistente en cada cuadro del clip.`
+    : "Usa una iluminación suave, favorecedora y consistente en cada cuadro del clip.";
+
+  const environmentSentence = environment
+    ? `Ambienta la escena en un entorno de ${environment.toLowerCase()}.`
+    : "";
+
+  const paletteSentence = `La paleta de colores está compuesta por ${paletteText}, con texturas realistas y reflejos naturales a lo largo del movimiento.`;
+
+  const emotionAudienceSentence =
+    emotions.length || audience
+      ? capitalizeFirst(
+          [
+            emotions.length ? `El video debe transmitir una sensación de ${joinNatural(emotions, "es").toLowerCase()}` : "",
+            audience ? `conectar con ${audience.toLowerCase()}` : "",
+          ]
+            .filter(Boolean)
+            .join(" y ") + "."
+        )
+      : "";
+
+  const goalSentence = goal
+    ? `El video debe estar optimizado para ${goal.toLowerCase().replace(/-/g, " ")}, sintiéndose intencional y fiel a ese objetivo.`
+    : "";
+
+  const brandSentence = brandContextSentence(brand, "es");
+  const platformDirective = videoPlatformDirective(platform, "es");
+  const modeSentence = modeDirective(mode, "es");
+
+  return [
+    opening,
+    cameraSentence,
+    motionSentence,
+    pacingSentence,
+    moodSentence,
+    lightingSentence,
+    environmentSentence,
+    paletteSentence,
+    emotionAudienceSentence,
+    goalSentence,
+    brandSentence,
+    platformDirective,
+    modeSentence,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function buildEn(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+  const { selections, brand } = ctx;
+  const platform = ctx.platform!;
+  const subject = label("subject", selections, "en") || "jewelry piece";
+  const goal = label("goal", selections, "en");
+  const styles = labels("style", selections, "en");
+  const cameraMovement = label("cameraMovement", selections, "en");
+  const motionTypes = labels("motionType", selections, "en");
+  const pacing = label("pacing", selections, "en");
+  const moods = labels("mood", selections, "en");
+  const lighting = label("lighting", selections, "en");
+  const palette = labels("palette", selections, "en");
+  const environment = label("environment", selections, "en");
+  const emotions = labels("emotion", selections, "en");
+  const audience = label("audience", selections, "en");
 
   const brandName = brand.brandName || "the brand";
   const styleText = styles.length ? joinNatural(styles).toLowerCase() : "premium editorial";
@@ -363,9 +469,9 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
     ? `The video should be optimized for ${goal.toLowerCase().replace(/-/g, " ")}, feeling intentional and on-brief for that objective.`
     : "";
 
-  const brandSentence = brandContextSentence(brand);
-  const platformDirective = videoPlatformDirective(platform);
-  const modeSentence = modeDirective(mode);
+  const brandSentence = brandContextSentence(brand, "en");
+  const platformDirective = videoPlatformDirective(platform, "en");
+  const modeSentence = modeDirective(mode, "en");
 
   return [
     opening,
@@ -386,9 +492,8 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
     .join(" ");
 }
 
-function capitalizeFirst(s: string): string {
-  if (!s) return s;
-  return s.charAt(0).toUpperCase() + s.slice(1);
+function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
+  return (ctx.locale ?? "en") === "es" ? buildEs(ctx, mode) : buildEn(ctx, mode);
 }
 
 export const videoBlueprint: GeneratorBlueprint = {
