@@ -13,6 +13,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const navLinks = [
     { href: "/", label: dict.nav.studio },
+    { href: "/bracelets", label: dict.nav.bracelets },
     { href: "/library", label: dict.nav.library },
     { href: "/templates", label: dict.nav.templates },
     { href: "/enhance", label: dict.nav.enhancer },

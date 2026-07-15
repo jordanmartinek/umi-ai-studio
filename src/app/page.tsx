@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { CONTENT_TYPES } from "@/lib/content-types";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/lib/i18n/locale-context";
 
@@ -25,6 +26,31 @@ export default function Home() {
         </h1>
         <p className="mt-4 text-base leading-relaxed text-taupe">{dict.home.subtitle}</p>
       </div>
+
+      <Link href="/bracelets" className="mb-12 block">
+        <Card className="storybook-border group relative flex flex-col justify-between gap-6 overflow-hidden border-gold bg-gold-soft/30 p-8 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center">
+          <div className="flex items-start gap-4 sm:items-center">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-espresso text-cream">
+              <Sparkles className="h-6 w-6" strokeWidth={1.75} />
+            </div>
+            <div>
+              <p className="mb-1 font-accent text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+                {dict.bracelets.hero.eyebrow}
+              </p>
+              <h2 className="font-display text-2xl text-espresso sm:text-3xl">
+                {dict.bracelets.hero.title}
+              </h2>
+              <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-taupe">
+                {dict.bracelets.hero.subtitle}
+              </p>
+            </div>
+          </div>
+          <Button size="lg" className="shrink-0">
+            {dict.home.create}
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </Button>
+        </Card>
+      </Link>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {CONTENT_TYPES.map((type, index) => {

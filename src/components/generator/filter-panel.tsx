@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Clock } from "lucide-react";
-import { FilterGroup, GeneratorBlueprint, Selections } from "@/lib/types";
+import { FilterCategoryDef, FilterGroup, Selections } from "@/lib/types";
 import { CategorySection } from "@/components/generator/category-section";
 import { FilterGroupControl } from "@/components/generator/filter-group";
 import { useLocale } from "@/lib/i18n/locale-context";
@@ -16,8 +16,20 @@ import {
 import { translateOptionLabel } from "@/lib/i18n/translate-generator";
 import { Chip } from "@/components/ui/chip";
 
+/**
+ * The minimal shape FilterPanel needs. `GeneratorBlueprint` satisfies this
+ * automatically (structural typing), but this also lets non-prompt features
+ * like the Bracelet Idea Generator reuse the same rich filter UI without
+ * needing to define a `compose()` function they'll never call.
+ */
+export interface FilterPanelBlueprint {
+  slug: string;
+  selectionGroups: FilterGroup[];
+  categories?: FilterCategoryDef[];
+}
+
 interface Props {
-  blueprint: GeneratorBlueprint;
+  blueprint: FilterPanelBlueprint;
   selections: Selections;
   onChange: (groupId: string, values: string[]) => void;
 }
