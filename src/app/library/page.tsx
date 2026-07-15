@@ -61,10 +61,10 @@ export default function LibraryPage() {
   return (
     <div className="mx-auto max-w-4xl px-6 py-12">
       <div className="mb-8 max-w-2xl">
-        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gold-soft text-espresso">
+        <div className="storybook-border mb-4 flex h-11 w-11 items-center justify-center bg-gold-soft text-espresso">
           <LibraryIcon className="h-5 w-5" strokeWidth={1.75} />
         </div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+        <p className="mb-2 font-accent text-xs font-semibold uppercase tracking-[0.2em] text-gold">
           {dict.library.eyebrow}
         </p>
         <h1 className="font-display text-3xl text-espresso sm:text-4xl">

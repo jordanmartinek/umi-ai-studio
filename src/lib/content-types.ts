@@ -33,7 +33,7 @@ export interface ContentTypeMeta {
 
 export const CONTENT_TYPES: ContentTypeMeta[] = [
   { slug: "image", dictKey: "image", icon: ImageIcon, live: true },
-  { slug: "video", dictKey: "video", icon: Video, live: false },
+  { slug: "video", dictKey: "video", icon: Video, live: true },
   { slug: "caption", dictKey: "caption", icon: PenLine, live: true },
   { slug: "poll", dictKey: "poll", icon: BarChart3, live: true },
   { slug: "carousel", dictKey: "carousel", icon: GalleryHorizontal, live: false },

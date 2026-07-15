@@ -50,7 +50,7 @@ export default function BrandProfilePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-14">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+      <p className="mb-2 font-accent text-xs font-semibold uppercase tracking-[0.2em] text-gold">
         {dict.brandPage.eyebrow}
       </p>
       <h1 className="font-display text-3xl text-espresso sm:text-4xl">

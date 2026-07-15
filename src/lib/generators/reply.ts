@@ -1,5 +1,6 @@
 import { ComposeContext, FilterGroup, GeneratorBlueprint } from "@/lib/types";
 import { brandContextSentence, modeDirective, selectedLabel } from "@/lib/prompt-engine";
+import { personalityGroup, resolvePersonalityPhrase } from "@/lib/generators/shared";
 
 export const replyGroups: FilterGroup[] = [
   {
@@ -9,16 +10,7 @@ export const replyGroups: FilterGroup[] = [
     customPlaceholder: "e.g. Will this fit a small wrist?",
     options: [],
   },
-  {
-    id: "tone",
-    label: "Reply tone",
-    options: [
-      { id: "warm", label: "Warm" },
-      { id: "professional", label: "Professional" },
-      { id: "playful", label: "Playful" },
-      { id: "reassuring", label: "Reassuring" },
-    ],
-  },
+  personalityGroup(),
   {
     id: "goal",
     label: "Goal",
@@ -43,11 +35,10 @@ function extractFreeText(selections: ComposeContext["selections"], groupId: stri
 function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
   const { selections, brand } = ctx;
   const comment = extractFreeText(selections, "comment") || "a question about the product";
-  const tone = selectedLabel(findGroup("tone"), selections);
+  const personalityText = resolvePersonalityPhrase(findGroup("personality"), selections);
   const goal = selectedLabel(findGroup("goal"), selections);
 
   const brandName = brand.brandName || "the brand";
-  const toneText = tone ? tone.toLowerCase() : "warm";
   const goalText = goal ? goal.toLowerCase() : "answer the question clearly";
 
   const opening =
@@ -55,7 +46,7 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
       ? `Write a witty, highly shareable reply from ${brandName} to this Instagram comment: "${comment}" — a reply so good other followers would want to screenshot or quote it.`
       : mode === "creative"
       ? `Write a charming, personality-filled reply from ${brandName} to this Instagram comment: "${comment}".`
-      : `Write a ${toneText} customer service reply from ${brandName} to this Instagram comment: "${comment}".`;
+      : `Write a reply from ${brandName} to this Instagram comment: "${comment}", using ${personalityText || "a warm tone"}.`;
 
   const goalSentence = `The main goal of the reply is to ${goalText}.`;
 

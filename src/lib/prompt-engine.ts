@@ -110,6 +110,26 @@ export function platformSuffix(platform: PlatformMeta): string {
       return "aspect ratio 4:5, sharp typography-safe composition";
     case "stable-diffusion":
       return "aspect ratio 4:5, 8k, highly detailed, professional photography, negative prompt: blurry, low quality, distorted, watermark, text, oversaturated";
+    case "leonardo":
+      return "aspect ratio 4:5, PhotoReal style, ultra-detailed, high fidelity";
+    case "firefly":
+      return "aspect ratio 4:5, photo content type, commercially safe, clean composition";
+    default:
+      return "";
+  }
+}
+
+/** Instructional directive appended for video-generation platforms (Runway, Veo, Kling, Luma). */
+export function videoPlatformDirective(platform: PlatformMeta): string {
+  switch (platform.id) {
+    case "runway":
+      return "Describe the shot as a smooth, cinematic camera move (e.g. slow push-in or gentle pan) lasting 4-8 seconds, in a single continuous take.";
+    case "veo":
+      return "Describe the scene with clear physical motion, natural camera movement, and consistent lighting across the full duration of the clip.";
+    case "kling":
+      return "Emphasize fluid, natural motion and physically plausible dynamics, keeping the subject clearly readable throughout the clip.";
+    case "luma":
+      return "Keep the motion simple and elegant — a subtle camera drift or object motion works best for a short, dreamlike loop.";
     default:
       return "";
   }
@@ -138,3 +158,18 @@ export function modeKeyword(mode: "reliable" | "creative" | "viral"): string {
 }
 
 export type Compose = (ctx: ComposeContext) => Record<"reliable" | "creative" | "viral", string>;
+
+/**
+ * Builds a natural-language description of a combined writing personality,
+ * e.g. ["Elegant", "Witty"] -> "an elegant yet witty tone" and
+ * ["Luxury", "Friendly", "Storytelling"] -> "a luxurious, friendly and
+ * storytelling-driven tone". Designed to read fluently for any number of
+ * combined traits (1 to many).
+ */
+export function personalityPhrase(traits: string[]): string {
+  const clean = traits.filter(Boolean).map((t) => t.toLowerCase());
+  if (clean.length === 0) return "";
+  if (clean.length === 1) return `${article(clean[0])} ${clean[0]} tone`;
+  if (clean.length === 2) return `${article(clean[0])} ${clean[0]} yet ${clean[1]} tone`;
+  return `a tone that is ${joinNatural(clean)}`;
+}

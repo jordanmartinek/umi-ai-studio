@@ -1,5 +1,6 @@
 import { ComposeContext, FilterGroup, GeneratorBlueprint } from "@/lib/types";
 import { brandContextSentence, modeDirective, selectedLabel } from "@/lib/prompt-engine";
+import { personalityGroup, resolvePersonalityPhrase } from "@/lib/generators/shared";
 
 export const productDescriptionGroups: FilterGroup[] = [
   {
@@ -26,16 +27,7 @@ export const productDescriptionGroups: FilterGroup[] = [
       { id: "ring", label: "Ring" },
     ],
   },
-  {
-    id: "style",
-    label: "Style",
-    options: [
-      { id: "elegant", label: "Elegant" },
-      { id: "minimalist", label: "Minimalist" },
-      { id: "bohemian", label: "Bohemian" },
-      { id: "luxury", label: "Luxury" },
-    ],
-  },
+  personalityGroup(),
   {
     id: "seo",
     label: "SEO optimized",
@@ -64,12 +56,11 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
   const { selections, brand } = ctx;
   const stone = selectedLabel(findGroup("stone"), selections) || "natural gemstone";
   const productType = selectedLabel(findGroup("productType"), selections) || "piece";
-  const style = selectedLabel(findGroup("style"), selections);
+  const personalityText = resolvePersonalityPhrase(findGroup("personality"), selections);
   const seo = selections.seo?.[0] === "yes";
   const platform = selectedLabel(findGroup("platform"), selections);
 
   const brandName = brand.brandName || "the brand";
-  const styleText = style ? style.toLowerCase() : "elegant";
   const platformText = platform ? platform : "an ecommerce storefront";
 
   const opening =
@@ -77,7 +68,7 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
       ? `Write a bold, benefit-driven ${platformText} product description for ${brandName}'s ${stone.toLowerCase()} ${productType.toLowerCase()}, written to convert scrollers into buyers with strong emotional hooks.`
       : mode === "creative"
       ? `Write an evocative, story-driven ${platformText} product description for ${brandName}'s ${stone.toLowerCase()} ${productType.toLowerCase()}, weaving in the meaning or lore of the ${stone.toLowerCase()} stone.`
-      : `Write a polished, ${styleText} ${platformText} product description for ${brandName}'s ${stone.toLowerCase()} ${productType.toLowerCase()}.`;
+      : `Write a polished ${platformText} product description for ${brandName}'s ${stone.toLowerCase()} ${productType.toLowerCase()}, using ${personalityText || "an elegant tone"}.`;
 
   const structureSentence =
     "Include a short attention-grabbing headline, 2-3 sentences of persuasive body copy covering materials, craftsmanship, and how it feels to wear, and a bullet list of 3-4 key details (materials, sizing, care instructions).";

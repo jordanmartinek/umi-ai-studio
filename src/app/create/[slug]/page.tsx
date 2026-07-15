@@ -6,7 +6,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getBlueprint } from "@/lib/generators";
 import { CONTENT_TYPES, ContentTypeMeta } from "@/lib/content-types";
-import { FilterGroupControl } from "@/components/generator/filter-group";
+import { FilterPanel } from "@/components/generator/filter-panel";
+import { PresetBar } from "@/components/generator/preset-bar";
 import { PromptOutput } from "@/components/generator/prompt-output";
 import { Button } from "@/components/ui/button";
 import { PLATFORMS, Selections, GenerationMode, PlatformMeta, GeneratorBlueprint } from "@/lib/types";
@@ -112,7 +113,7 @@ function GeneratorForm({
       </Link>
 
       <div className="mb-10 max-w-2xl">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+        <p className="mb-2 font-accent text-xs font-semibold uppercase tracking-[0.2em] text-gold">
           {copy.title} {dict.generatorPage.promptGeneratorSuffix}
         </p>
         <h1 className="font-display text-3xl text-espresso sm:text-4xl">
@@ -121,16 +122,14 @@ function GeneratorForm({
       </div>
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_420px]">
-        <div className="space-y-8">
-          {blueprint.selectionGroups.map((group) => (
-            <FilterGroupControl
-              key={group.id}
-              generatorSlug={blueprint.slug}
-              group={group}
-              selections={selections}
-              onChange={handleChange}
-            />
-          ))}
+        <div className="space-y-6">
+          <PresetBar
+            generatorSlug={blueprint.slug}
+            selections={selections}
+            onApply={(next) => setSelections(next)}
+          />
+
+          <FilterPanel blueprint={blueprint} selections={selections} onChange={handleChange} />
 
           <Button
             size="lg"

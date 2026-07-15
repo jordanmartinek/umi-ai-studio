@@ -1,5 +1,6 @@
 import { ComposeContext, FilterGroup, GeneratorBlueprint } from "@/lib/types";
 import { article, brandContextSentence, modeDirective, selectedLabel } from "@/lib/prompt-engine";
+import { goalGroup, resolvePersonalityPhrase, personalityGroup } from "@/lib/generators/shared";
 
 export const storyGroups: FilterGroup[] = [
   {
@@ -26,17 +27,7 @@ export const storyGroups: FilterGroup[] = [
       { id: "nostalgia", label: "Nostalgia" },
     ],
   },
-  {
-    id: "personality",
-    label: "Brand personality",
-    multiple: true,
-    options: [
-      { id: "warm", label: "Warm" },
-      { id: "luxury", label: "Luxury" },
-      { id: "playful", label: "Playful" },
-      { id: "minimal", label: "Minimal" },
-    ],
-  },
+  personalityGroup(),
   {
     id: "length",
     label: "Sequence length",
@@ -46,6 +37,7 @@ export const storyGroups: FilterGroup[] = [
       { id: "7-slides", label: "7 slides" },
     ],
   },
+  goalGroup(),
 ];
 
 function findGroup(id: string) {
@@ -56,15 +48,13 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
   const { selections, brand } = ctx;
   const occasion = selectedLabel(findGroup("occasion"), selections) || "an announcement";
   const theme = selectedLabel(findGroup("theme"), selections);
-  const personality = findGroup("personality")
-    .options.filter((o) => selections.personality?.includes(o.id))
-    .map((o) => o.label.toLowerCase());
+  const personalityText = resolvePersonalityPhrase(findGroup("personality"), selections);
   const length = selectedLabel(findGroup("length"), selections) || "5 slides";
   const slideCount = length.split(" ")[0];
+  const goal = selectedLabel(findGroup("contentGoal"), selections);
 
   const brandName = brand.brandName || "the brand";
   const themeText = theme ? theme.toLowerCase() : "storytelling";
-  const personalityText = personality.length ? personality.join(", ") : "warm and elegant";
   const themeArticle = article(themeText);
 
   const opening =
@@ -77,11 +67,24 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
   const structureSentence =
     "Structure it with a clear beginning (hook), middle (build interest / show the product or moment), and end (a single clear call-to-action). For each slide, provide the on-screen text and a one-line description of the visual.";
 
-  const personalitySentence = `The tone throughout should feel ${personalityText}.`;
+  const personalitySentence = personalityText
+    ? `Write it with ${personalityText} throughout.`
+    : "Write it with a warm, elegant tone throughout.";
+
+  const goalSentence = goal
+    ? `The sequence's primary objective is to ${goal.toLowerCase().replace(/-/g, " ")}.`
+    : "";
 
   const brandSentence = brandContextSentence(brand);
 
-  return [opening, structureSentence, personalitySentence, brandSentence, modeDirective(mode)]
+  return [
+    opening,
+    structureSentence,
+    personalitySentence,
+    goalSentence,
+    brandSentence,
+    modeDirective(mode),
+  ]
     .filter(Boolean)
     .join(" ");
 }

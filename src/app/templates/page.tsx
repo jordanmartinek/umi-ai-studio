@@ -18,10 +18,10 @@ export default function TemplatesPage() {
   return (
     <div className="mx-auto max-w-6xl px-6 py-16">
       <div className="mb-10 max-w-2xl">
-        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gold-soft text-espresso">
+        <div className="storybook-border mb-4 flex h-11 w-11 items-center justify-center bg-gold-soft text-espresso">
           <LayoutTemplate className="h-5 w-5" strokeWidth={1.75} />
         </div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+        <p className="mb-2 font-accent text-xs font-semibold uppercase tracking-[0.2em] text-gold">
           {dict.templateGallery.eyebrow}
         </p>
         <h1 className="font-display text-3xl text-espresso sm:text-4xl">

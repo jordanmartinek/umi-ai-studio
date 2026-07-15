@@ -14,6 +14,16 @@
   --color-gold-soft: #eaddc4;
   --color-line: #e6dccb;
   --color-card: #ffffff;
+
+  /* Studio Ghibli-inspired accent palette: soft sky, sun-warmed gold,
+     and a whisper of forest green — used sparingly as painterly accents
+     (backdrop blobs, decorative dividers, small badges) so the overall
+     feel stays minimal and luxurious rather than cartoonish. */
+  --color-sky: #7fb2c9;
+  --color-sky-soft: #d7e9ee;
+  --color-forest: #6f8f66;
+  --color-forest-soft: #e3ead9;
+  --color-sunset: #d98452;
 }
 
 @theme inline {
@@ -29,8 +39,14 @@
   --color-gold-soft: var(--color-gold-soft);
   --color-line: var(--color-line);
   --color-card: var(--color-card);
+  --color-sky: var(--color-sky);
+  --color-sky-soft: var(--color-sky-soft);
+  --color-forest: var(--color-forest);
+  --color-forest-soft: var(--color-forest-soft);
+  --color-sunset: var(--color-sunset);
   --font-sans: var(--font-inter);
   --font-display: var(--font-fraunces);
+  --font-accent: var(--font-klee);
 }
 
 body {
@@ -48,4 +64,40 @@ body {
 
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+/* Soft, hand-painted watercolor blobs used as a subtle Ghibli-style backdrop.
+   Fixed, blurred, low-opacity, and behind everything — decorative only. */
+.ghibli-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ghibli-blob {
+  position: absolute;
+  border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%;
+  filter: blur(60px);
+  opacity: 0.35;
+}
+
+/* A gentle hand-drawn wobble for decorative dividers and card corners. */
+.storybook-border {
+  border-radius: 26px 30px 24px 32px / 30px 24px 32px 26px;
+}
+
+@keyframes ghibli-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(1.5%, -2%, 0) scale(1.03);
+  }
+}
+
+.ghibli-blob {
+  animation: ghibli-drift 22s ease-in-out infinite;
 }

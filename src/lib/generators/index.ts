@@ -1,5 +1,6 @@
 import { GeneratorBlueprint } from "@/lib/types";
 import { imageBlueprint } from "@/lib/generators/image";
+import { videoBlueprint } from "@/lib/generators/video";
 import { captionBlueprint } from "@/lib/generators/caption";
 import { pollBlueprint } from "@/lib/generators/poll";
 import { storyBlueprint } from "@/lib/generators/story";
@@ -8,6 +9,7 @@ import { productDescriptionBlueprint } from "@/lib/generators/product-descriptio
 
 export const GENERATOR_REGISTRY: Record<string, GeneratorBlueprint> = {
   image: imageBlueprint,
+  video: videoBlueprint,
   caption: captionBlueprint,
   poll: pollBlueprint,
   story: storyBlueprint,

@@ -1,12 +1,12 @@
 import { ComposeContext, FilterGroup, GeneratorBlueprint } from "@/lib/types";
 import {
-  article,
   brandContextSentence,
   joinNatural,
   modeDirective,
   selectedLabel,
   selectedLabels,
 } from "@/lib/prompt-engine";
+import { goalGroup, personalityGroup, resolvePersonalityPhrase } from "@/lib/generators/shared";
 
 export const captionGroups: FilterGroup[] = [
   {
@@ -23,18 +23,7 @@ export const captionGroups: FilterGroup[] = [
     allowCustom: true,
     customPlaceholder: "e.g. Anklet, ring stack, gift set...",
   },
-  {
-    id: "voice",
-    label: "Brand voice",
-    options: [
-      { id: "luxury", label: "Luxury" },
-      { id: "friendly", label: "Friendly" },
-      { id: "storytelling", label: "Storytelling" },
-      { id: "educational", label: "Educational" },
-      { id: "emotional", label: "Emotional" },
-      { id: "elegant", label: "Elegant" },
-    ],
-  },
+  personalityGroup(),
   {
     id: "length",
     label: "Length",
@@ -77,6 +66,7 @@ export const captionGroups: FilterGroup[] = [
       { id: "romance", label: "Romance" },
     ],
   },
+  goalGroup(),
 ];
 
 function findGroup(id: string) {
@@ -94,13 +84,13 @@ const CTA_TEXT: Record<string, string> = {
 function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
   const { selections, brand } = ctx;
   const subject = selectedLabel(findGroup("subject"), selections) || "piece";
-  const voice = selectedLabel(findGroup("voice"), selections);
+  const personalityText = resolvePersonalityPhrase(findGroup("personality"), selections);
   const length = selectedLabel(findGroup("length"), selections) || "Medium";
   const audience = selectedLabels(findGroup("audience"), selections);
   const emotion = selectedLabels(findGroup("emotion"), selections);
+  const goal = selectedLabel(findGroup("contentGoal"), selections);
 
   const brandName = brand.brandName || "the brand";
-  const voiceText = voice ? voice.toLowerCase() : "warm, elegant";
   const audienceText = audience.length ? joinNatural(audience).toLowerCase() : "followers";
   const emotionText = emotion.length ? joinNatural(emotion).toLowerCase() : "confidence";
   const ctaKey = ctx.selections.cta?.[0];
@@ -118,9 +108,13 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
       ? `Write a bold, scroll-stopping Instagram caption for ${brandName}'s ${subject.toLowerCase()}, written to spark comments, shares, and saves.`
       : mode === "creative"
       ? `Write an imaginative, story-driven Instagram caption for ${brandName}'s ${subject.toLowerCase()}, taking a fresh angle while staying true to the brand.`
-      : `Write ${article(voiceText)} ${voiceText} Instagram caption for ${brandName}'s ${subject.toLowerCase()}.`;
+      : `Write an Instagram caption for ${brandName}'s ${subject.toLowerCase()}, using ${personalityText || "a warm, elegant tone"}.`;
 
   const audienceSentence = `Speak directly to ${audienceText} and aim to evoke a sense of ${emotionText}.`;
+
+  const goalSentence = goal
+    ? `The caption's primary objective is to ${goal.toLowerCase().replace(/-/g, " ")}.`
+    : "";
 
   const brandSentence = brandContextSentence(brand);
 
@@ -128,7 +122,15 @@ function build(ctx: ComposeContext, mode: "reliable" | "creative" | "viral") {
     ? `End with a clear call-to-action ${ctaText}.`
     : "End with a natural, low-pressure call-to-action.";
 
-  return [opening, audienceSentence, lengthGuidance, brandSentence, ctaSentence, modeDirective(mode)]
+  return [
+    opening,
+    audienceSentence,
+    lengthGuidance,
+    goalSentence,
+    brandSentence,
+    ctaSentence,
+    modeDirective(mode),
+  ]
     .filter(Boolean)
     .join(" ");
 }

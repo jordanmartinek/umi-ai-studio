@@ -21,10 +21,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <header className="sticky top-0 z-40 border-b border-line bg-cream/85 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b-2 border-gold-soft bg-cream/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 gap-3">
           <Link href="/" className="flex shrink-0 items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-espresso text-cream">
+            <span className="storybook-border flex h-8 w-8 items-center justify-center bg-espresso text-cream">
               <Sparkles className="h-4 w-4" strokeWidth={2} />
             </span>
             <span className="font-display text-lg tracking-tight text-espresso">

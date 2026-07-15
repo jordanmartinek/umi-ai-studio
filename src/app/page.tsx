@@ -7,13 +7,17 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/lib/i18n/locale-context";
 
+// A gentle rotation of Ghibli-inspired accent tints (sky, gold, forest) for
+// content-type icon badges, so the grid feels painterly rather than uniform.
+const ICON_ACCENTS = ["bg-gold-soft", "bg-sky-soft", "bg-forest-soft"];
+
 export default function Home() {
   const { dict } = useLocale();
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-16">
       <div className="mb-14 max-w-2xl">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
+        <p className="mb-3 font-accent text-xs font-semibold uppercase tracking-[0.2em] text-gold">
           {dict.home.eyebrow}
         </p>
         <h1 className="font-display text-4xl leading-tight text-espresso sm:text-5xl">
@@ -23,20 +27,26 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {CONTENT_TYPES.map((type) => {
+        {CONTENT_TYPES.map((type, index) => {
           const Icon = type.icon;
           const copy = dict.contentTypes[type.dictKey];
+          const iconBg = ICON_ACCENTS[index % ICON_ACCENTS.length];
           const content = (
             <Card
               className={cn(
-                "group relative flex h-full flex-col justify-between p-6 transition-all duration-200",
+                "storybook-border group relative flex h-full flex-col justify-between p-6 transition-all duration-200",
                 type.live
                   ? "cursor-pointer hover:-translate-y-0.5 hover:border-gold hover:shadow-md"
                   : "opacity-70"
               )}
             >
               <div>
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gold-soft text-espresso">
+                <div
+                  className={cn(
+                    "mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-espresso",
+                    iconBg
+                  )}
+                >
                   <Icon className="h-5 w-5" strokeWidth={1.75} />
                 </div>
                 <h3 className="font-display text-xl text-espresso">{copy.title}</h3>
