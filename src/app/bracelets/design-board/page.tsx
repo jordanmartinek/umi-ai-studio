@@ -118,7 +118,7 @@ export default function DesignBoardPage() {
                   </Link>
                   <button
                     onClick={() => handleRemoveConcept(concept.id)}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-line text-taupe transition-colors hover:border-red-300 hover:text-red-600"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-line text-taupe transition-colors hover:border-sunset/50 hover:text-sunset"
                     aria-label={copy.delete}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -149,7 +149,7 @@ export default function DesignBoardPage() {
                 <div className="mt-4 flex gap-2">
                   <button
                     onClick={() => handleRemoveCollection(collection.id)}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-line text-taupe transition-colors hover:border-red-300 hover:text-red-600"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-line text-taupe transition-colors hover:border-sunset/50 hover:text-sunset"
                     aria-label={copy.delete}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -182,7 +182,7 @@ export default function DesignBoardPage() {
                   </Link>
                   <button
                     onClick={() => handleRemoveLaunchPackage(pkg.id)}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-line text-taupe transition-colors hover:border-red-300 hover:text-red-600"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-line text-taupe transition-colors hover:border-sunset/50 hover:text-sunset"
                     aria-label={copy.delete}
                   >
                     <Trash2 className="h-4 w-4" />

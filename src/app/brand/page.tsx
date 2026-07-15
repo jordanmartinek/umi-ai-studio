@@ -92,7 +92,7 @@ export default function BrandProfilePage() {
         <div className="flex items-center gap-3 pt-2">
           <Button onClick={handleSave}>{dict.brandPage.save}</Button>
           {saved ? (
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-forest">
               <Check className="h-4 w-4" /> {dict.brandPage.saved}
             </span>
           ) : null}

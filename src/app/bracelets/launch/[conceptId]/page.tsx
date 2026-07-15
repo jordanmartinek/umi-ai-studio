@@ -203,7 +203,7 @@ function Item({ label, value, multiline }: { label: string; value: string; multi
         className={cn(
           "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-all",
           copied
-            ? "border-emerald-600 bg-emerald-50 text-emerald-700"
+            ? "border-forest bg-forest-soft text-forest"
             : "border-line bg-white text-espresso hover:border-gold hover:bg-gold-soft/40"
         )}
       >

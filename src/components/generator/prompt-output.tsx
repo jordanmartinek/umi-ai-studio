@@ -118,7 +118,7 @@ export function PromptOutput({ results, sourceSlug, sourceLabel }: Props) {
           onClick={handleCopy}
           className={cn(
             "inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full text-sm font-medium transition-all",
-            copied ? "bg-emerald-600 text-white" : "bg-espresso text-cream hover:bg-espresso/90"
+            copied ? "bg-forest text-white" : "bg-espresso text-cream hover:bg-espresso/90"
           )}
         >
           {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -130,7 +130,7 @@ export function PromptOutput({ results, sourceSlug, sourceLabel }: Props) {
           className={cn(
             "inline-flex h-11 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition-all",
             saved
-              ? "border-emerald-600 bg-emerald-50 text-emerald-700"
+              ? "border-forest bg-forest-soft text-forest"
               : "border-line bg-white text-espresso hover:border-gold hover:bg-gold-soft/40"
           )}
           title={dict.promptOutput.save}

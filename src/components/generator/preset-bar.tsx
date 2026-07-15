@@ -280,7 +280,7 @@ function PresetManagerModal({
                   </IconAction>
                   <IconAction title={dict.presets.share} onClick={() => handleShare(preset)}>
                     {copiedId === preset.id ? (
-                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      <Check className="h-3.5 w-3.5 text-forest" />
                     ) : (
                       <Copy className="h-3.5 w-3.5" />
                     )}
@@ -342,10 +342,10 @@ function PresetManagerModal({
             </Button>
           </div>
           {importState === "success" ? (
-            <p className="mt-1.5 text-xs font-medium text-emerald-600">{dict.presets.importSuccess}</p>
+            <p className="mt-1.5 text-xs font-medium text-forest">{dict.presets.importSuccess}</p>
           ) : null}
           {importState === "error" ? (
-            <p className="mt-1.5 text-xs font-medium text-red-500">{dict.presets.importError}</p>
+            <p className="mt-1.5 text-xs font-medium text-sunset">{dict.presets.importError}</p>
           ) : null}
         </div>
 
@@ -371,7 +371,7 @@ function IconAction({
       title={title}
       className={cn(
         "flex h-7 w-7 items-center justify-center rounded-full text-taupe transition-colors hover:bg-bone",
-        danger ? "hover:text-red-500" : "hover:text-espresso"
+        danger ? "hover:text-sunset" : "hover:text-espresso"
       )}
     >
       {children}

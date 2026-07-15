@@ -1,7 +1,8 @@
 /**
- * A fixed, decorative backdrop of soft watercolor-style blobs in sky-blue,
- * sun-gold, and forest-green — evoking the painterly skies of Studio Ghibli
- * without ever competing with content. Purely visual, no interactivity.
+ * A fixed, decorative backdrop of soft watercolor-style blobs in seafoam
+ * turquoise, coral sunset-glow, and seagrass green — evoking a painterly
+ * Miyazaki seaside (Ponyo's tide pools, Kiki's coastal town) without ever
+ * competing with content. Purely visual, no interactivity.
  */
 export function GhibliBackdrop() {
   return (
@@ -23,7 +24,7 @@ export function GhibliBackdrop() {
           right: "-12%",
           width: "32vw",
           height: "32vw",
-          background: "var(--color-gold-soft)",
+          background: "var(--color-sunset-soft)",
           animationDelay: "-8s",
         }}
       />

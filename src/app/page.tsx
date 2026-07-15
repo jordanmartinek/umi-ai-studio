@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/lib/i18n/locale-context";
 
-// A gentle rotation of Ghibli-inspired accent tints (sky, gold, forest) for
-// content-type icon badges, so the grid feels painterly rather than uniform.
+// A gentle rotation of ocean-pastel accent tints (coral, seafoam, seagrass)
+// for content-type icon badges, so the grid feels painterly rather than
+// uniform — like sea glass along a Ghibli-seaside shoreline.
 const ICON_ACCENTS = ["bg-gold-soft", "bg-sky-soft", "bg-forest-soft"];
 
 export default function Home() {

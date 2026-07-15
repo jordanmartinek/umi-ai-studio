@@ -1,29 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --background: #faf7f2;
-  --foreground: #2b2420;
+  /* Miyazaki-at-the-seaside palette: a Ponyo/Kiki's-era wash of seafoam,
+     ocean turquoise, sun-warmed coral, and deep tide-pool ink, in place of
+     the original espresso/gold studio palette. Every token name below is
+     unchanged from before (so no component classNames needed to change) —
+     only the underlying hues shifted toward soft, watercolor ocean pastels. */
+  --background: #f3faf9;
+  --foreground: #1f3a3e;
 
-  --color-cream: #faf7f2;
-  --color-bone: #f2ebe0;
-  --color-espresso: #2b2420;
-  --color-taupe: #8a7b6c;
-  --color-taupe-light: #b3a696;
-  --color-gold: #a9814f;
-  --color-gold-light: #d9be95;
-  --color-gold-soft: #eaddc4;
-  --color-line: #e6dccb;
+  --color-cream: #f3faf9;
+  --color-bone: #e6f4f0;
+  --color-espresso: #1f3a3e;
+  --color-taupe: #5c7d80;
+  --color-taupe-light: #95b2b4;
+  --color-gold: #dd8f68;
+  --color-gold-light: #efbb99;
+  --color-gold-soft: #fae3d2;
+  --color-line: #d2e6e4;
   --color-card: #ffffff;
 
-  /* Studio Ghibli-inspired accent palette: soft sky, sun-warmed gold,
-     and a whisper of forest green — used sparingly as painterly accents
-     (backdrop blobs, decorative dividers, small badges) so the overall
-     feel stays minimal and luxurious rather than cartoonish. */
-  --color-sky: #7fb2c9;
-  --color-sky-soft: #d7e9ee;
-  --color-forest: #6f8f66;
-  --color-forest-soft: #e3ead9;
-  --color-sunset: #d98452;
+  /* Painterly accents used sparingly for backdrop blobs, decorative
+     dividers, and small badges — ocean turquoise, seagrass green, and a
+     warm coral sunset-glow, so the overall feel stays a gentle wash of
+     watercolor rather than cartoonish. */
+  --color-sky: #4ea6bb;
+  --color-sky-soft: #d2edf1;
+  --color-forest: #3f8f6e;
+  --color-forest-soft: #dcf0e6;
+  --color-sunset: #e0785f;
+  --color-sunset-soft: #f8ddd2;
 }
 
 @theme inline {
@@ -44,6 +50,7 @@
   --color-forest: var(--color-forest);
   --color-forest-soft: var(--color-forest-soft);
   --color-sunset: var(--color-sunset);
+  --color-sunset-soft: var(--color-sunset-soft);
   --font-sans: var(--font-inter);
   --font-display: var(--font-fraunces);
   --font-accent: var(--font-klee);
@@ -86,6 +93,15 @@ body {
 /* A gentle hand-drawn wobble for decorative dividers and card corners. */
 .storybook-border {
   border-radius: 26px 30px 24px 32px / 30px 24px 32px 26px;
+}
+
+/* A soft, repeating wave silhouette used as a coastal divider beneath the
+   header and above the footer — a small, consistent nod to the ocean theme
+   that reads as gentle surf rather than a literal illustration. */
+.wave-divider {
+  display: block;
+  width: 100%;
+  height: 14px;
 }
 
 @keyframes ghibli-drift {

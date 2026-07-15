@@ -202,7 +202,7 @@ function LibraryCard({ prompt, onChange }: { prompt: SavedPrompt; onChange: () =
               onClick={handleCopy}
               className={cn(
                 "inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-xs font-medium transition-colors",
-                copied ? "bg-emerald-600 text-white" : "bg-espresso text-cream hover:bg-espresso/90"
+                copied ? "bg-forest text-white" : "bg-espresso text-cream hover:bg-espresso/90"
               )}
             >
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
@@ -258,7 +258,7 @@ function LibraryCard({ prompt, onChange }: { prompt: SavedPrompt; onChange: () =
                 removePrompt(prompt.id);
                 onChange();
               }}
-              className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-taupe hover:text-red-600"
+              className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-taupe hover:text-sunset"
             >
               <Trash2 className="h-3.5 w-3.5" /> {dict.library.delete}
             </button>
