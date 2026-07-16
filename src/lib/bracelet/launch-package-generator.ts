@@ -31,14 +31,6 @@ function makeId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function gemstoneText(concept: BraceletConcept, locale: Locale): string {
-  return concept.gemstones.length
-    ? joinNatural(concept.gemstones, locale)
-    : locale === "es"
-    ? "piedras naturales"
-    : "natural gemstones";
-}
-
 /** English mood phrase, e.g. "a peaceful feeling" / "an elegant feeling", with correct a/an agreement. */
 function moodFeelingEn(concept: BraceletConcept): string {
   const mood = concept.mood.join(" and ").toLowerCase() || "elegant";
@@ -104,6 +96,23 @@ function visualMaterialsText(concept: BraceletConcept, locale: Locale): string {
 }
 
 /**
+ * A short "what this is primarily made from" phrase for punchy, brief copy
+ * (captions, SEO titles, short descriptions, keywords) that shouldn't list
+ * every material — but also must not fall back to a generic, INACCURATE
+ * "natural gemstones" / "piedras naturales" placeholder when the concept
+ * has no gemstones at all (e.g. a pure macramé/thread, chain, or leather
+ * piece). Prefers actual selected gemstones; falls back to the first other
+ * selected material, then the style's default metal type — never to a
+ * made-up gemstone claim.
+ */
+function primaryMaterialText(concept: BraceletConcept, locale: Locale): string {
+  if (concept.gemstones.length) return joinNatural(concept.gemstones, locale);
+  const extras = extraMaterials(concept);
+  if (extras.length) return extras[0];
+  return concept.metalType;
+}
+
+/**
  * A "{style} bracelet" / "pulsera de estilo {style}" phrase for prompts
  * that need to name the piece's construction technique (macramé, seed
  * bead, chain, etc.), not just its color/mood — important for AI image
@@ -123,7 +132,7 @@ function stylePhrase(concept: BraceletConcept, locale: Locale): string {
 
 function buildProduct(concept: BraceletConcept, brand: BrandProfile, locale: Locale): LaunchPackageProduct {
   const brandName = brand.brandName || (locale === "es" ? "la marca" : "the brand");
-  const gems = gemstoneText(concept, locale);
+  const gems = primaryMaterialText(concept, locale);
   const materials = materialsText(concept, locale);
 
   if (locale === "es") {
@@ -149,7 +158,7 @@ function buildProduct(concept: BraceletConcept, brand: BrandProfile, locale: Loc
 
 function buildMarketing(concept: BraceletConcept, brand: BrandProfile, locale: Locale): LaunchPackageMarketing {
   const brandName = brand.brandName || (locale === "es" ? "la marca" : "the brand");
-  const gems = gemstoneText(concept, locale);
+  const gems = primaryMaterialText(concept, locale);
 
   const hashtagBaseEn = ["handmadejewelry", "bracelet", "smallbusiness", "giftideas"];
   const hashtagBaseEs = ["joyeriaartesanal", "pulsera", "negociopequeno", "ideasderegalo"];
@@ -248,7 +257,7 @@ function buildPhotography(concept: BraceletConcept, brand: BrandProfile, locale:
 
 function buildVideo(concept: BraceletConcept, brand: BrandProfile, locale: Locale): LaunchPackageVideo {
   const brandName = brand.brandName || (locale === "es" ? "la marca" : "the brand");
-  const gems = gemstoneText(concept, locale);
+  const gems = primaryMaterialText(concept, locale);
   const visualMaterials = visualMaterialsText(concept, locale);
   const palette = concept.colorPalette.toLowerCase();
 
@@ -284,7 +293,7 @@ function buildBranding(concept: BraceletConcept, brand: BrandProfile, locale: Lo
       thankYouCard: `¡Gracias por tu compra! Esperamos que ${concept.name} te acompañe en tus momentos más especiales. Con cariño, el equipo de ${brandName}.`,
       collectionIntroduction: `Presentamos ${concept.collectionName}: una colección inspirada en ${concept.theme.toLowerCase()}, hecha para quienes buscan joyería con verdadero significado.`,
       websiteBannerCopy: `Nuevo: ${concept.collectionName} ya está disponible. Descubre ${concept.name} y el resto de la colección.`,
-      emailLaunchAnnouncement: `Asunto: Presentamos ${concept.name} ✨\n\nHola,\n\nEstamos emocionados de compartir nuestra nueva pieza: ${concept.name}, parte de la colección ${concept.collectionName}. Inspirada en ${concept.theme.toLowerCase()}, esta pulsera combina ${gemstoneText(concept, "es")} con ${moodFeelingEs(concept)}.\n\nDescúbrela ahora en ${brandName}.`,
+      emailLaunchAnnouncement: `Asunto: Presentamos ${concept.name} ✨\n\nHola,\n\nEstamos emocionados de compartir nuestra nueva pieza: ${concept.name}, parte de la colección ${concept.collectionName}. Inspirada en ${concept.theme.toLowerCase()}, esta pulsera combina ${primaryMaterialText(concept, "es")} con ${moodFeelingEs(concept)}.\n\nDescúbrela ahora en ${brandName}.`,
     };
   }
 
@@ -293,7 +302,7 @@ function buildBranding(concept: BraceletConcept, brand: BrandProfile, locale: Lo
     thankYouCard: `Thank you for your purchase! We hope ${concept.name} joins you for your most special moments. With love, the ${brandName} team.`,
     collectionIntroduction: `Introducing ${concept.collectionName}: a collection inspired by ${concept.theme.toLowerCase()}, made for those who want jewelry with real meaning.`,
     websiteBannerCopy: `New: ${concept.collectionName} is here. Discover ${concept.name} and the rest of the collection.`,
-    emailLaunchAnnouncement: `Subject: Introducing ${concept.name} ✨\n\nHi there,\n\nWe're excited to share our newest piece: ${concept.name}, part of the ${concept.collectionName} collection. Inspired by ${concept.theme.toLowerCase()}, this bracelet pairs ${gemstoneText(concept, "en")} with ${moodFeelingEn(concept)}.\n\nDiscover it now at ${brandName}.`,
+    emailLaunchAnnouncement: `Subject: Introducing ${concept.name} ✨\n\nHi there,\n\nWe're excited to share our newest piece: ${concept.name}, part of the ${concept.collectionName} collection. Inspired by ${concept.theme.toLowerCase()}, this bracelet pairs ${primaryMaterialText(concept, "en")} with ${moodFeelingEn(concept)}.\n\nDiscover it now at ${brandName}.`,
   };
 }
 
