@@ -2,7 +2,7 @@ import { Locale, Selections } from "@/lib/types";
 import { joinNatural } from "@/lib/prompt-engine";
 import { translateOptionLabel } from "@/lib/i18n/translate-generator";
 import { en, es } from "@/lib/i18n/dictionaries";
-import { braceletGroups, findBraceletGroup } from "@/lib/bracelet/taxonomy";
+import { braceletGroups, findBraceletGroup, MATERIAL_GROUP_IDS } from "@/lib/bracelet/taxonomy";
 import { getThemeVocab, vocabList } from "@/lib/bracelet/vocabulary";
 import { difficultyLabel, formatBuildTime, getStyleProfile } from "@/lib/bracelet/style-profile";
 import { createSeededRandom, hashString } from "@/lib/bracelet/random";
@@ -183,7 +183,12 @@ export function generateBraceletConcept(input: ConceptGenerationInput): Bracelet
   const emotionLabels = localizedLabels("emotion", selections, locale);
   const occasionLabel = localizedLabel("occasion", selections, locale);
   const colorPaletteLabel = localizedLabel("colorPalette", selections, locale);
-  const materialLabels = localizedLabels("materials", selections, locale);
+  // Materials are spread across several focused sub-groups (gemstones, metal,
+  // cord, findings, etc.) rather than one flat list — flatten every group's
+  // selections into a single ordered list of labels for the concept output.
+  const materialLabels = MATERIAL_GROUP_IDS.flatMap((groupId) =>
+    localizedLabels(groupId, selections, locale)
+  );
 
   const nameWords = vocabList(vocab, "nameWords", locale);
   const gemstoneWords = vocabList(vocab, "gemstones", locale);
