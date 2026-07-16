@@ -2,7 +2,14 @@ import { Locale, Selections } from "@/lib/types";
 import { joinNatural } from "@/lib/prompt-engine";
 import { translateOptionLabel } from "@/lib/i18n/translate-generator";
 import { en, es } from "@/lib/i18n/dictionaries";
-import { braceletGroups, findBraceletGroup, MATERIAL_GROUP_IDS } from "@/lib/bracelet/taxonomy";
+import {
+  braceletGroups,
+  findBraceletGroup,
+  MATERIAL_GROUP_IDS,
+  GEMSTONE_MATERIAL_GROUP_IDS,
+  METAL_MATERIAL_GROUP_ID,
+  CORD_MATERIAL_GROUP_ID,
+} from "@/lib/bracelet/taxonomy";
 import { getThemeVocab, vocabList } from "@/lib/bracelet/vocabulary";
 import { difficultyLabel, formatBuildTime, getStyleProfile } from "@/lib/bracelet/style-profile";
 import { createSeededRandom, hashString } from "@/lib/bracelet/random";
@@ -203,8 +210,15 @@ export function generateBraceletConcept(input: ConceptGenerationInput): Bracelet
   const inspiration = buildInspiration(themeLabel, aestheticLabels, locale);
   const targetCustomer = buildTargetCustomer(aestheticLabels, emotionLabels, occasionLabel, locale);
 
+  // The user's own Gemstones / Glass & Crystal Bead picks should always win
+  // over a random theme-vocabulary gemstone — otherwise a concept could
+  // describe "aquamarine" in its story while the Materials field (correctly)
+  // lists something completely different, like "mostacilla" the user chose.
+  const selectedGemstones = GEMSTONE_MATERIAL_GROUP_IDS.flatMap((groupId) =>
+    localizedLabels(groupId, selections, locale)
+  );
   const gemstoneCount = rand.int(1, 2);
-  const gemstones = rand.pickMany(gemstoneWords, gemstoneCount);
+  const gemstones = selectedGemstones.length ? selectedGemstones : rand.pickMany(gemstoneWords, gemstoneCount);
 
   const charmCount = rand.int(1, 2);
   const charmSuggestions = rand.pickMany(charmWords, charmCount);
@@ -212,6 +226,18 @@ export function generateBraceletConcept(input: ConceptGenerationInput): Bracelet
   const resolvedMaterials = materialLabels.length
     ? materialLabels
     : [styleProfile.metalType[locale], ...(locale === "es" ? ["piedras naturales"] : ["natural gemstones"])];
+
+  // Likewise, an explicitly picked Metal or Cord/Thread material should
+  // override the bracelet style's generic manufacturing default (e.g. a
+  // "Silk" style defaulting to "Gold-filled clasp" even though the user
+  // picked Sterling Silver, or picking "Thread" but the style default
+  // still reporting "Waxed cotton cord" instead of the chosen thread).
+  const selectedMetal = localizedLabels(METAL_MATERIAL_GROUP_ID, selections, locale);
+  const selectedCord = localizedLabels(CORD_MATERIAL_GROUP_ID, selections, locale);
+  const resolvedMetalType = selectedMetal.length ? joinNatural(selectedMetal, locale) : styleProfile.metalType[locale];
+  const resolvedCordType = selectedCord.length
+    ? joinNatural(selectedCord, locale)
+    : styleProfile.cordType?.[locale];
 
   const buildTime = formatBuildTime(styleProfile.buildTimeMinutes, locale);
   const difficulty = styleProfile.difficulty;
@@ -234,8 +260,8 @@ export function generateBraceletConcept(input: ConceptGenerationInput): Bracelet
     colorPalette: colorPaletteLabel ?? paletteFallback,
     materials: resolvedMaterials,
     gemstones,
-    metalType: styleProfile.metalType[locale],
-    cordType: styleProfile.cordType?.[locale],
+    metalType: resolvedMetalType,
+    cordType: resolvedCordType,
     charmSuggestions,
     difficulty,
     buildTime,

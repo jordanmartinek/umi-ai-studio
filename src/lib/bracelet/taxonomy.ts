@@ -530,6 +530,23 @@ export const MATERIAL_GROUP_IDS = [
   "materialSpecialty",
 ] as const;
 
+/** Sub-groups whose selections should drive the concept's "Gemstones" field
+ *  (the bead/stone story text) — natural gemstones plus glass/crystal/pearl
+ *  beads, since both answer "what kind of bead is this piece made from".
+ *  When the user has picked anything here, it takes priority over the
+ *  theme-vocabulary random pick (see concept-generator.ts). */
+export const GEMSTONE_MATERIAL_GROUP_IDS = ["materialGemstones", "materialGlassCrystalPearl"] as const;
+
+/** Sub-group that should drive the concept's "Metal Type" field when the
+ *  user has explicitly picked a metal, overriding the bracelet style's
+ *  generic default. */
+export const METAL_MATERIAL_GROUP_ID = "materialMetal";
+
+/** Sub-group that should drive the concept's "Cord Type" field when the
+ *  user has explicitly picked a cord/thread/stringing material, overriding
+ *  the bracelet style's generic default. */
+export const CORD_MATERIAL_GROUP_ID = "materialCordThread";
+
 export function findBraceletGroup(id: string): FilterGroup {
   const group = braceletGroups.find((g) => g.id === id);
   if (!group) throw new Error(`Unknown bracelet filter group: ${id}`);

@@ -53,8 +53,22 @@ function moodFeelingEs(concept: BraceletConcept): string {
   return `una sensación ${mood}`;
 }
 
+/**
+ * Materials text for copy that already mentions gemstones separately (e.g.
+ * "Made with {gems} and {materials}"). Excludes anything already listed in
+ * concept.gemstones so a selection like "Japanese Seed Beads" doesn't get
+ * named twice in the same sentence — concept.materials is every material
+ * sub-group flattened together, which includes the same bead/gemstone picks
+ * that concept.gemstones is built from.
+ */
 function materialsText(concept: BraceletConcept, locale: Locale): string {
-  return concept.materials.length ? joinNatural(concept.materials, locale) : concept.metalType;
+  const gemSet = new Set(concept.gemstones.map((g) => g.toLowerCase()));
+  const rest = concept.materials.filter((m) => !gemSet.has(m.toLowerCase()));
+  if (rest.length) return joinNatural(rest, locale);
+  // Every material was already covered by gemstones (e.g. the user only
+  // picked beads/gemstones and nothing else) — fall back to the metal type
+  // so the sentence still reads naturally instead of repeating the gems.
+  return concept.metalType;
 }
 
 // --- Product ---------------------------------------------------------------
