@@ -151,12 +151,17 @@ function buildTargetCustomer(
 
 function buildWhyCustomersLoveIt(
   name: string,
-  gemstoneLabels: string[],
+  materialsForStory: string[],
   moodLabels: string[],
   locale: Locale
 ): string {
-  const gemstoneText = gemstoneLabels.length
-    ? joinNatural(gemstoneLabels, locale)
+  // materialsForStory is whatever the concept is actually made from
+  // (gemstones if any were selected, otherwise the other selected
+  // materials) — falling back to a generic "natural stones" phrase only
+  // when NOTHING was selected at all, never as a stand-in for a real,
+  // deliberately-chosen non-gemstone material (see caller).
+  const materialsText = materialsForStory.length
+    ? joinNatural(materialsForStory, locale)
     : locale === "es"
     ? "piedras naturales seleccionadas a mano"
     : "hand-selected natural stones";
@@ -167,9 +172,9 @@ function buildWhyCustomersLoveIt(
     : "warm and timeless";
 
   if (locale === "es") {
-    return `${name} combina ${gemstoneText} con una sensación ${moodText}, sintiéndose a la vez personal y digna de ser coleccionada — el tipo de pieza que las clientas atesoran y regalan.`;
+    return `${name} combina ${materialsText} con una sensación ${moodText}, sintiéndose a la vez personal y digna de ser coleccionada — el tipo de pieza que las clientas atesoran y regalan.`;
   }
-  return `${name} pairs ${gemstoneText} with a ${moodText} feeling, making it feel both personal and collectible — the kind of piece customers treasure and gift.`;
+  return `${name} pairs ${materialsText} with a ${moodText} feeling, making it feel both personal and collectible — the kind of piece customers treasure and gift.`;
 }
 
 /** Generates a single, cohesive bracelet concept from the given filters. */
@@ -210,6 +215,17 @@ export function generateBraceletConcept(input: ConceptGenerationInput): Bracelet
   const inspiration = buildInspiration(themeLabel, aestheticLabels, locale);
   const targetCustomer = buildTargetCustomer(aestheticLabels, emotionLabels, occasionLabel, locale);
 
+  // Whether the user touched the Materials category AT ALL — across every
+  // sub-group (gemstones, metal, cord, findings, decorative, etc.), not
+  // just the gemstone ones. This is the key distinction: if they picked
+  // *anything* under Materials (say, only a cord/thread for a pure macramé
+  // piece), that's a deliberate, complete choice and we must never invent
+  // additional materials/gemstones they didn't ask for. The random
+  // "surprise me" gemstone suggestion should only fire when the whole
+  // Materials section was left untouched — i.e. the user wants the
+  // generator to suggest something on their behalf.
+  const anyMaterialSelected = materialLabels.length > 0;
+
   // The user's own Gemstones / Glass & Crystal Bead picks should always win
   // over a random theme-vocabulary gemstone — otherwise a concept could
   // describe "aquamarine" in its story while the Materials field (correctly)
@@ -218,12 +234,16 @@ export function generateBraceletConcept(input: ConceptGenerationInput): Bracelet
     localizedLabels(groupId, selections, locale)
   );
   const gemstoneCount = rand.int(1, 2);
-  const gemstones = selectedGemstones.length ? selectedGemstones : rand.pickMany(gemstoneWords, gemstoneCount);
+  const gemstones = selectedGemstones.length
+    ? selectedGemstones
+    : anyMaterialSelected
+    ? [] // user made deliberate material choices that don't include any gemstones/beads — respect that, don't invent one
+    : rand.pickMany(gemstoneWords, gemstoneCount);
 
   const charmCount = rand.int(1, 2);
   const charmSuggestions = rand.pickMany(charmWords, charmCount);
 
-  const resolvedMaterials = materialLabels.length
+  const resolvedMaterials = anyMaterialSelected
     ? materialLabels
     : [styleProfile.metalType[locale], ...(locale === "es" ? ["piedras naturales"] : ["natural gemstones"])];
 
@@ -244,7 +264,13 @@ export function generateBraceletConcept(input: ConceptGenerationInput): Bracelet
 
   const paletteFallback = locale === "es" ? "Neutros cálidos y dorado" : "Warm neutrals and gold";
 
-  const whyCustomersLoveIt = buildWhyCustomersLoveIt(name, gemstones, emotionLabels, locale);
+  // The "why customers love it" story should describe gemstones when the
+  // piece has any, but fall back to whatever materials were actually
+  // selected (e.g. "embroidery floss and pressed flowers") for a piece with
+  // no gemstones at all — never silently drop back to a generic "natural
+  // stones" claim just because gemstones is empty by design.
+  const materialsForStory = gemstones.length ? gemstones : resolvedMaterials;
+  const whyCustomersLoveIt = buildWhyCustomersLoveIt(name, materialsForStory, emotionLabels, locale);
 
   return {
     id: makeId(),

@@ -46,51 +46,72 @@ function moodFeelingEs(concept: BraceletConcept): string {
 }
 
 /**
- * Materials text for copy that already mentions gemstones separately (e.g.
- * "Made with {gems} and {materials}"). Excludes anything already listed in
- * concept.gemstones so a selection like "Japanese Seed Beads" doesn't get
- * named twice in the same sentence — concept.materials is every material
- * sub-group flattened together, which includes the same bead/gemstone picks
- * that concept.gemstones is built from.
+ * Splits a concept's full material list into "primary" (what to call it in
+ * short copy — gemstones if any, otherwise just the first other selected
+ * material) and "rest" (everything else, for copy that names the primary
+ * material and then wants to list additional materials without repeating
+ * it). Computed together, from the same source list, so the two halves can
+ * never overlap and repeat an item — regardless of whether "primary" ended
+ * up being a real gemstone or a non-gemstone fallback like "Embroidery Floss".
  */
-function materialsText(concept: BraceletConcept, locale: Locale): string {
-  const gemSet = new Set(concept.gemstones.map((g) => g.toLowerCase()));
-  const rest = concept.materials.filter((m) => !gemSet.has(m.toLowerCase()));
-  if (rest.length) return joinNatural(rest, locale);
-  // Every material was already covered by gemstones (e.g. the user only
-  // picked beads/gemstones and nothing else) — fall back to the metal type
-  // so the sentence still reads naturally instead of repeating the gems.
-  return concept.metalType;
+function splitPrimaryMaterials(concept: BraceletConcept): { primary: string[]; rest: string[] } {
+  if (concept.gemstones.length) {
+    const gemSet = new Set(concept.gemstones.map((g) => g.toLowerCase()));
+    return { primary: concept.gemstones, rest: concept.materials.filter((m) => !gemSet.has(m.toLowerCase())) };
+  }
+  if (concept.materials.length) {
+    const [first, ...rest] = concept.materials;
+    return { primary: [first], rest };
+  }
+  return { primary: [], rest: [] };
 }
 
 /**
- * Every non-gemstone material selected for this concept (cord/thread,
- * findings, decorative extras, etc.) — same exclusion logic as
- * materialsText() but returned as an array instead of a joined string, so
- * callers can combine it with gemstones in a single joinNatural() list
- * rather than nesting two separately-joined phrases together.
+ * Materials text for copy that already mentions the primary material(s)
+ * separately (e.g. "Made with {gems} and {materials}") — everything else
+ * the piece is made from, never repeating whatever "gems" already named.
+ *
+ * Returns "" when there's genuinely nothing left to add (e.g. the user
+ * selected exactly one material total). Callers must handle the empty
+ * case by omitting the "and {materials}" clause entirely — this
+ * deliberately does NOT fall back to concept.metalType, because that
+ * silently invented a metal detail the user never selected (or, when
+ * metalType had actually been chosen, duplicated it against "gems").
  */
-function extraMaterials(concept: BraceletConcept): string[] {
-  const gemSet = new Set(concept.gemstones.map((g) => g.toLowerCase()));
-  return concept.materials.filter((m) => !gemSet.has(m.toLowerCase()));
+function materialsText(concept: BraceletConcept, locale: Locale): string {
+  const { rest } = splitPrimaryMaterials(concept);
+  return rest.length ? joinNatural(rest, locale) : "";
+}
+
+/** " and {materials}" clause, or "" when there's nothing extra to add — for
+ *  English copy built as "Handmade with {gems}{clause}." */
+function extraMaterialsClauseEn(concept: BraceletConcept, locale: Locale): string {
+  const text = materialsText(concept, locale);
+  return text ? ` and ${text.toLowerCase()}` : "";
+}
+
+/** " y {materials}" clause, or "" when there's nothing extra to add — for
+ *  Spanish copy built as "Hecha a mano con {gems}{clause}." */
+function extraMaterialsClauseEs(concept: BraceletConcept, locale: Locale): string {
+  const text = materialsText(concept, locale);
+  return text ? ` y ${text.toLowerCase()}` : "";
 }
 
 /**
  * A complete, natural-language description of what this piece is actually
- * made from — gemstones AND everything else (cord/thread, decorative
- * extras, findings) — for AI image/video generation prompts that need to
- * describe the piece's real materials and craft technique, not just its
- * gemstones. This is what fixes prompts that previously only mentioned
- * gemstones and silently dropped e.g. "embroidery floss" or "pressed
- * flowers" for a macramé/thread-based bracelet.
+ * made from — every selected material, gemstones and otherwise (cord/
+ * thread, decorative extras, findings) — for AI image/video generation
+ * prompts that need to describe the piece's real materials and craft
+ * technique, not just its gemstones. This is what fixes prompts that
+ * previously only mentioned gemstones and silently dropped e.g. "embroidery
+ * floss" or "pressed flowers" for a macramé/thread-based bracelet.
  *
- * Falls back to gemstones + metal type when nothing extra was selected, so
- * gemstone-only concepts still read naturally (e.g. "citrine and gold-
- * filled spacer beads" instead of just "citrine").
+ * Falls back to the metal type when nothing was selected at all, so a
+ * concept generated with zero material filters still reads naturally.
  */
 function visualMaterialsText(concept: BraceletConcept, locale: Locale): string {
-  const extras = extraMaterials(concept);
-  const all = [...concept.gemstones, ...extras];
+  const { primary, rest } = splitPrimaryMaterials(concept);
+  const all = [...primary, ...rest];
   if (all.length) return joinNatural(all, locale);
   return concept.metalType;
 }
@@ -106,9 +127,8 @@ function visualMaterialsText(concept: BraceletConcept, locale: Locale): string {
  * made-up gemstone claim.
  */
 function primaryMaterialText(concept: BraceletConcept, locale: Locale): string {
-  if (concept.gemstones.length) return joinNatural(concept.gemstones, locale);
-  const extras = extraMaterials(concept);
-  if (extras.length) return extras[0];
+  const { primary } = splitPrimaryMaterials(concept);
+  if (primary.length) return joinNatural(primary, locale);
   return concept.metalType;
 }
 
@@ -133,13 +153,12 @@ function stylePhrase(concept: BraceletConcept, locale: Locale): string {
 function buildProduct(concept: BraceletConcept, brand: BrandProfile, locale: Locale): LaunchPackageProduct {
   const brandName = brand.brandName || (locale === "es" ? "la marca" : "the brand");
   const gems = primaryMaterialText(concept, locale);
-  const materials = materialsText(concept, locale);
 
   if (locale === "es") {
     return {
       productName: concept.name,
       collectionName: concept.collectionName,
-      description: `${concept.name} es una pulsera artesanal de la colección ${concept.collectionName}, inspirada en ${concept.theme.toLowerCase()}. Elaborada con ${gems} y ${materials.toLowerCase()}, esta pieza captura ${moodFeelingEs(concept)} pensada para ${concept.occasion.toLowerCase()}. ${concept.whyCustomersLoveIt}`,
+      description: `${concept.name} es una pulsera artesanal de la colección ${concept.collectionName}, inspirada en ${concept.theme.toLowerCase()}. Elaborada con ${gems}${extraMaterialsClauseEs(concept, locale)}, esta pieza captura ${moodFeelingEs(concept)} pensada para ${concept.occasion.toLowerCase()}. ${concept.whyCustomersLoveIt}`,
       shortDescription: `Pulsera de ${gems} inspirada en ${concept.theme.toLowerCase()}, perfecta para ${concept.occasion.toLowerCase()}.`,
       productStory: `${concept.story} Cada pieza de ${brandName} está hecha a mano en pequeños lotes, pensada para quien valora la artesanía y el significado detrás de cada detalle.`,
     };
@@ -148,7 +167,7 @@ function buildProduct(concept: BraceletConcept, brand: BrandProfile, locale: Loc
   return {
     productName: concept.name,
     collectionName: concept.collectionName,
-    description: `${concept.name} is a handcrafted bracelet from the ${concept.collectionName} collection, inspired by ${concept.theme.toLowerCase()}. Made with ${gems} and ${materials.toLowerCase()}, this piece captures ${moodFeelingEn(concept)} designed for ${concept.occasion.toLowerCase()}. ${concept.whyCustomersLoveIt}`,
+    description: `${concept.name} is a handcrafted bracelet from the ${concept.collectionName} collection, inspired by ${concept.theme.toLowerCase()}. Made with ${gems}${extraMaterialsClauseEn(concept, locale)}, this piece captures ${moodFeelingEn(concept)} designed for ${concept.occasion.toLowerCase()}. ${concept.whyCustomersLoveIt}`,
     shortDescription: `A ${gems} bracelet inspired by ${concept.theme.toLowerCase()}, perfect for ${concept.occasion.toLowerCase()}.`,
     productStory: `${concept.story} Every ${brandName} piece is handmade in small batches, designed for those who value the craftsmanship and meaning behind every detail.`,
   };
@@ -176,7 +195,7 @@ function buildMarketing(concept: BraceletConcept, brand: BrandProfile, locale: L
       instagramCaption: `✨ Presentamos ${concept.name} ✨ Inspirada en ${concept.theme.toLowerCase()}, esta pieza combina ${gems} con ${moodFeelingEs(concept)}. Perfecta para ${concept.occasion.toLowerCase()} o para regalarte algo especial. 💛 Disponible ahora en ${brandName}.`,
       facebookCaption: `Conoce ${concept.name}, la nueva pieza de nuestra colección ${concept.collectionName}. Elaborada a mano con ${gems}, esta pulsera está inspirada en ${concept.theme.toLowerCase()} y pensada para quienes buscan algo con verdadero significado. Ideal para ${concept.occasion.toLowerCase()}.`,
       pinterestDescription: `${concept.name} — pulsera artesanal de ${gems} inspirada en ${concept.theme.toLowerCase()}. Perfecta idea de regalo para ${concept.occasion.toLowerCase()}. #${themeHashtag}`,
-      etsyDescription: `${concept.name} de la colección ${concept.collectionName}. Hecha a mano con ${gems} y ${materialsText(concept, locale).toLowerCase()}. Tiempo de elaboración: ${concept.buildTime}. Cada pieza es única y se hace en pequeños lotes.`,
+      etsyDescription: `${concept.name} de la colección ${concept.collectionName}. Hecha a mano con ${gems}${extraMaterialsClauseEs(concept, locale)}. Tiempo de elaboración: ${concept.buildTime}. Cada pieza es única y se hace en pequeños lotes.`,
       shopifyDescription: `Descubre ${concept.name}, una pulsera artesanal de ${gems} inspirada en ${concept.theme.toLowerCase()}. Parte de la colección ${concept.collectionName} de ${brandName}.`,
       seoTitle: `${concept.name} - Pulsera Artesanal de ${gems} | ${brandName}`,
       metaDescription: `Descubre ${concept.name}, una pulsera artesanal de ${gems} inspirada en ${concept.theme.toLowerCase()}. Perfecta para ${concept.occasion.toLowerCase()}.`.slice(0, 155),
@@ -194,7 +213,7 @@ function buildMarketing(concept: BraceletConcept, brand: BrandProfile, locale: L
     instagramCaption: `✨ Introducing ${concept.name} ✨ Inspired by ${concept.theme.toLowerCase()}, this piece pairs ${gems} with ${moodFeelingEn(concept)}. Perfect for ${concept.occasion.toLowerCase()} or treating yourself to something special. 💛 Available now at ${brandName}.`,
     facebookCaption: `Meet ${concept.name}, the newest piece from our ${concept.collectionName} collection. Handcrafted with ${gems}, this bracelet is inspired by ${concept.theme.toLowerCase()} and made for anyone looking for something with real meaning. Perfect for ${concept.occasion.toLowerCase()}.`,
     pinterestDescription: `${concept.name} — a handcrafted ${gems} bracelet inspired by ${concept.theme.toLowerCase()}. The perfect gift idea for ${concept.occasion.toLowerCase()}. #${themeHashtag}`,
-    etsyDescription: `${concept.name} from the ${concept.collectionName} collection. Handmade with ${gems} and ${materialsText(concept, locale).toLowerCase()}. Build time: ${concept.buildTime}. Every piece is unique and made in small batches.`,
+    etsyDescription: `${concept.name} from the ${concept.collectionName} collection. Handmade with ${gems}${extraMaterialsClauseEn(concept, locale)}. Build time: ${concept.buildTime}. Every piece is unique and made in small batches.`,
     shopifyDescription: `Discover ${concept.name}, a handcrafted ${gems} bracelet inspired by ${concept.theme.toLowerCase()}. Part of ${brandName}'s ${concept.collectionName} collection.`,
     seoTitle: `${concept.name} - Handmade ${gems} Bracelet | ${brandName}`,
     metaDescription: `Discover ${concept.name}, a handcrafted ${gems} bracelet inspired by ${concept.theme.toLowerCase()}. Perfect for ${concept.occasion.toLowerCase()}.`.slice(0, 155),
