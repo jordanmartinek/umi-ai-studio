@@ -71,6 +71,54 @@ function materialsText(concept: BraceletConcept, locale: Locale): string {
   return concept.metalType;
 }
 
+/**
+ * Every non-gemstone material selected for this concept (cord/thread,
+ * findings, decorative extras, etc.) — same exclusion logic as
+ * materialsText() but returned as an array instead of a joined string, so
+ * callers can combine it with gemstones in a single joinNatural() list
+ * rather than nesting two separately-joined phrases together.
+ */
+function extraMaterials(concept: BraceletConcept): string[] {
+  const gemSet = new Set(concept.gemstones.map((g) => g.toLowerCase()));
+  return concept.materials.filter((m) => !gemSet.has(m.toLowerCase()));
+}
+
+/**
+ * A complete, natural-language description of what this piece is actually
+ * made from — gemstones AND everything else (cord/thread, decorative
+ * extras, findings) — for AI image/video generation prompts that need to
+ * describe the piece's real materials and craft technique, not just its
+ * gemstones. This is what fixes prompts that previously only mentioned
+ * gemstones and silently dropped e.g. "embroidery floss" or "pressed
+ * flowers" for a macramé/thread-based bracelet.
+ *
+ * Falls back to gemstones + metal type when nothing extra was selected, so
+ * gemstone-only concepts still read naturally (e.g. "citrine and gold-
+ * filled spacer beads" instead of just "citrine").
+ */
+function visualMaterialsText(concept: BraceletConcept, locale: Locale): string {
+  const extras = extraMaterials(concept);
+  const all = [...concept.gemstones, ...extras];
+  if (all.length) return joinNatural(all, locale);
+  return concept.metalType;
+}
+
+/**
+ * A "{style} bracelet" / "pulsera de estilo {style}" phrase for prompts
+ * that need to name the piece's construction technique (macramé, seed
+ * bead, chain, etc.), not just its color/mood — important for AI image
+ * generation, since "macramé" vs. "chain" produces very different visuals
+ * even with identical gemstones. Guards against doubling the word
+ * "bracelet"/"pulsera" when concept.style is already a full phrase like
+ * the "Handcrafted bracelet" / "Pulsera artesanal" fallback.
+ */
+function stylePhrase(concept: BraceletConcept, locale: Locale): string {
+  const styleLower = concept.style.toLowerCase();
+  const braceletWord = locale === "es" ? "pulsera" : "bracelet";
+  if (styleLower.includes(braceletWord)) return styleLower;
+  return locale === "es" ? `pulsera de estilo ${styleLower}` : `${styleLower} bracelet`;
+}
+
 // --- Product ---------------------------------------------------------------
 
 function buildProduct(concept: BraceletConcept, brand: BrandProfile, locale: Locale): LaunchPackageProduct {
@@ -155,18 +203,24 @@ function buildMarketing(concept: BraceletConcept, brand: BrandProfile, locale: L
 
 function buildPhotography(concept: BraceletConcept, brand: BrandProfile, locale: Locale): LaunchPackagePhotography {
   const brandName = brand.brandName || (locale === "es" ? "la marca" : "the brand");
-  const gems = gemstoneText(concept, locale);
+  // Use the full materials description (gemstones + cord/thread + any other
+  // selected materials) and the actual construction style/technique, not
+  // just gemstones — otherwise a macramé bracelet made with embroidery
+  // floss and pressed flowers gets described as if it were plain gemstone
+  // beads, which produces a visually wrong AI image.
+  const visualMaterials = visualMaterialsText(concept, locale);
+  const style = stylePhrase(concept, locale);
   const palette = concept.colorPalette.toLowerCase();
   const mood = concept.mood.length ? joinNatural(concept.mood.map((m) => m.toLowerCase()), locale) : "";
 
   if (locale === "es") {
     return {
-      studioProductPhoto: `Fotografía de producto profesional de ${concept.name}, una pulsera de ${gems}, sobre un fondo de estudio limpio. Iluminación suave con softbox, paleta de colores en ${palette}, enfoque nítido en la textura de la piedra, profundidad de campo reducida. Formato 4:5.`,
+      studioProductPhoto: `Fotografía de producto profesional de ${concept.name}, una ${style} hecha con ${visualMaterials}, sobre un fondo de estudio limpio. Iluminación suave con softbox, paleta de colores en ${palette}, enfoque nítido en la textura de los materiales, profundidad de campo reducida. Formato 4:5.`,
       lifestylePhoto: `Fotografía de estilo de vida de una persona usando ${concept.name} en su muñeca, en un entorno cálido e iluminado naturalmente. Sensación ${mood || "cálida y elegante"}, tonos ${palette}, con una estética auténtica y editorial.`,
       flatLay: `Flat lay minimalista de ${concept.name} junto a elementos que evocan ${concept.theme.toLowerCase()} (por ejemplo, textiles suaves, hojas secas o piedras a juego), sobre una superficie neutra en tonos ${palette}. Vista cenital, composición ordenada.`,
       editorialCampaign: `Fotografía editorial de alta gama de ${concept.name}, con dirección artística inspirada en campañas de joyería de lujo. Iluminación dramática, paleta ${palette}, sensación ${mood || "sofisticada"}, para la colección ${concept.collectionName} de ${brandName}.`,
       holidayVersion: `Versión de temporada de la fotografía de producto de ${concept.name}, incorporando elementos festivos sutiles (luces cálidas, envoltorio elegante) sin dejar de mantener la paleta ${palette} y la sensación ${mood || "elegante"} de la marca.`,
-      macroDetailShot: `Toma macro extrema de ${concept.name}, mostrando la textura y el detalle de ${gems} y ${concept.metalType.toLowerCase()}. Enfoque nítido, iluminación suave que resalta la calidad artesanal.`,
+      macroDetailShot: `Toma macro extrema de ${concept.name}, mostrando la textura y el detalle de ${visualMaterials}. Enfoque nítido, iluminación suave que resalta la calidad artesanal de esta ${style}.`,
       packagingShot: `Fotografía de producto de ${concept.name} presentada en su empaque de ${brandName}, con una composición limpia que resalte tanto la pieza como la experiencia de unboxing. Paleta ${palette}.`,
       onWristLifestyle: `Fotografía de estilo de vida en primer plano de ${concept.name} en la muñeca, con un gesto natural (sosteniendo una taza, tocando el cabello), luz natural suave, sensación ${mood || "cálida"}.`,
       pinterestImage: `Imagen vertical optimizada para Pinterest de ${concept.name}, con una composición onírica inspirada en ${concept.theme.toLowerCase()}, paleta ${palette}, pensada para guardarse y repinearse.`,
@@ -175,14 +229,14 @@ function buildPhotography(concept: BraceletConcept, brand: BrandProfile, locale:
   }
 
   return {
-    studioProductPhoto: `Professional product photograph of ${concept.name}, a ${gems} bracelet, against a clean studio background. Soft softbox lighting, ${palette} color palette, sharp focus on stone texture, shallow depth of field. 4:5 aspect ratio.`,
+    studioProductPhoto: `Professional product photograph of ${concept.name}, a ${style} made with ${visualMaterials}, against a clean studio background. Soft softbox lighting, ${palette} color palette, sharp focus on material texture, shallow depth of field. 4:5 aspect ratio.`,
     lifestylePhoto: `Lifestyle photograph of someone wearing ${concept.name} on their wrist, in a warm, naturally lit setting. ${
       mood ? `${capitalize(mood)} mood, ${palette} tones` : `${capitalize(palette)} tones`
     }, authentic editorial feeling.`,
     flatLay: `Minimalist flat lay of ${concept.name} alongside elements that evoke ${concept.theme.toLowerCase()} (e.g. soft textiles, dried leaves, or matching stones), on a neutral surface in ${palette} tones. Overhead view, tidy composition.`,
     editorialCampaign: `High-end editorial photograph of ${concept.name}, with art direction inspired by luxury jewelry campaigns. Dramatic lighting, ${palette} palette, ${mood || "sophisticated"} mood, for ${brandName}'s ${concept.collectionName} collection.`,
     holidayVersion: `A seasonal version of the ${concept.name} product photograph, incorporating subtle festive elements (warm lights, elegant wrapping) while keeping the brand's ${palette} palette and ${mood || "elegant"} mood.`,
-    macroDetailShot: `Extreme macro shot of ${concept.name}, showing the texture and detail of the ${gems} and ${concept.metalType.toLowerCase()}. Sharp focus, soft lighting that highlights the handmade quality.`,
+    macroDetailShot: `Extreme macro shot of ${concept.name}, showing the texture and detail of ${visualMaterials}. Sharp focus, soft lighting that highlights the handmade quality of this ${style}.`,
     packagingShot: `Product photograph of ${concept.name} presented in its ${brandName} packaging, with a clean composition that highlights both the piece and the unboxing experience. ${capitalize(palette)} palette.`,
     onWristLifestyle: `Close-up lifestyle photograph of ${concept.name} on the wrist, with a natural gesture (holding a cup, touching hair), soft natural light, ${mood || "warm"} mood.`,
     pinterestImage: `Vertical Pinterest-optimized image of ${concept.name}, with a dreamy composition inspired by ${concept.theme.toLowerCase()}, ${palette} palette, designed to be saved and repinned.`,
@@ -195,6 +249,7 @@ function buildPhotography(concept: BraceletConcept, brand: BrandProfile, locale:
 function buildVideo(concept: BraceletConcept, brand: BrandProfile, locale: Locale): LaunchPackageVideo {
   const brandName = brand.brandName || (locale === "es" ? "la marca" : "the brand");
   const gems = gemstoneText(concept, locale);
+  const visualMaterials = visualMaterialsText(concept, locale);
   const palette = concept.colorPalette.toLowerCase();
 
   if (locale === "es") {
@@ -203,7 +258,7 @@ function buildVideo(concept: BraceletConcept, brand: BrandProfile, locale: Local
       tiktok: `Video corto y dinámico para TikTok mostrando el proceso de empaquetado o revelación de ${concept.name}, con cortes rápidos, música de tendencia y un gancho visual en el primer segundo.`,
       youtubeShorts: `Video vertical corto para YouTube Shorts mostrando ${concept.name} en detalle, con una narración breve sobre la inspiración detrás de la pieza (${concept.theme.toLowerCase()}).`,
       behindTheScenes: `Video detrás de cámaras mostrando el espacio de trabajo de ${brandName} mientras se elabora ${concept.name}, con tomas cálidas y auténticas del proceso artesanal.`,
-      braceletMakingProcess: `Video del proceso de elaboración de ${concept.name}, mostrando manos trabajando con ${gems} y ${concept.metalType.toLowerCase()} paso a paso, con una toma cenital fija y buena iluminación natural.`,
+      braceletMakingProcess: `Video del proceso de elaboración de ${concept.name}, mostrando manos trabajando con ${visualMaterials} paso a paso, con una toma cenital fija y buena iluminación natural.`,
       packagingVideo: `Video del empaquetado de ${concept.name}, mostrando el detalle del envoltorio de ${brandName}, con música suave y un ritmo pausado que transmita cuidado y atención al detalle.`,
     };
   }
@@ -213,7 +268,7 @@ function buildVideo(concept: BraceletConcept, brand: BrandProfile, locale: Local
     tiktok: `A short, dynamic TikTok showing the unboxing or reveal of ${concept.name}, with quick cuts, trending audio, and a visual hook within the first second.`,
     youtubeShorts: `A short vertical YouTube Short showing ${concept.name} in detail, with a brief voiceover about the inspiration behind the piece (${concept.theme.toLowerCase()}).`,
     behindTheScenes: `A behind-the-scenes video showing ${brandName}'s workspace while making ${concept.name}, with warm, authentic shots of the handmade process.`,
-    braceletMakingProcess: `A process video of making ${concept.name}, showing hands working with the ${gems} and ${concept.metalType.toLowerCase()} step by step, with a locked-off overhead shot and good natural light.`,
+    braceletMakingProcess: `A process video of making ${concept.name}, showing hands working with ${visualMaterials} step by step, with a locked-off overhead shot and good natural light.`,
     packagingVideo: `A packaging video for ${concept.name}, showing the detail of ${brandName}'s wrapping, with soft music and an unhurried pace that conveys care and attention to detail.`,
   };
 }
