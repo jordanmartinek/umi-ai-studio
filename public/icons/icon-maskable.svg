@@ -1,0 +1,26 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="512" height="512">
+  <rect x="0" y="0" width="100" height="100" fill="#d2edf1" />
+  <g transform="translate(50 50) scale(0.8) translate(-50 -50)">
+    <path d="M14 22 L16.6 27.4 L22 30 L16.6 32.6 L14 38 L11.4 32.6 L6 30 L11.4 27.4 Z" fill="#fae3d2" />
+    <path d="M85 65 L86.6 68.6 L90.2 70.2 L86.6 71.8 L85 75.4 L83.4 71.8 L79.8 70.2 L83.4 68.6 Z" fill="#f8ddd2" />
+    <path d="M38 21 C 31 15, 26 12, 21 8" fill="none" stroke="#1f3a3e" stroke-width="5.4" stroke-linecap="round" />
+    <path d="M62 21 C 69 15, 74 12, 79 8" fill="none" stroke="#1f3a3e" stroke-width="5.4" stroke-linecap="round" />
+    <path d="M38 21 C 31 15, 26 12, 21 8" fill="none" stroke="#e0785f" stroke-width="3" stroke-linecap="round" />
+    <path d="M62 21 C 69 15, 74 12, 79 8" fill="none" stroke="#e0785f" stroke-width="3" stroke-linecap="round" />
+    <circle cx="21" cy="8" r="2.6" fill="#1f3a3e" />
+    <circle cx="79" cy="8" r="2.6" fill="#1f3a3e" />
+    <circle cx="50" cy="50" r="34" fill="none" stroke="#1f3a3e" stroke-width="15.5" />
+    <circle cx="50" cy="50" r="34" fill="none" stroke="#e0785f" stroke-width="12" />
+    <circle cx="50" cy="50" r="34" fill="none" stroke="#c96449" stroke-width="12" stroke-dasharray="2.2 5.8" />
+    <path d="M27 34 A 34 34 0 0 1 46 17.5" fill="none" stroke="#f6b9a4" stroke-width="4.5" stroke-linecap="round" opacity="0.9" />
+    <circle cx="50" cy="50" r="15.5" fill="#1f3a3e" />
+    <circle cx="50" cy="50" r="14" fill="#f3faf9" />
+    <circle cx="50" cy="50" r="10.6" fill="#1f3a3e" />
+    <circle cx="50" cy="50" r="9.2" fill="#4ea6bb" />
+    <circle cx="50" cy="50" r="5.4" fill="#f3faf9" />
+    <circle cx="50" cy="50" r="3.6" fill="#1f3a3e" />
+    <circle cx="50" cy="50" r="2.6" fill="#16303a" />
+    <circle cx="46.6" cy="46.4" r="1.9" fill="#ffffff" opacity="0.95" />
+    <circle cx="53.4" cy="53.6" r="0.8" fill="#ffffff" opacity="0.6" />
+  </g>
+</svg>

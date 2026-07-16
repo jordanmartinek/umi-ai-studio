@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Fraunces, Klee_One } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 import { LocaleProvider } from "@/lib/i18n/locale-context";
 import { GhibliBackdrop } from "@/components/ghibli-backdrop";
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -30,6 +31,27 @@ export const metadata: Metadata = {
   title: "Umi AI Studio",
   description:
     "An AI creative assistant that helps Umi Accessories generate professional, brand-consistent prompts for ChatGPT, Claude, Gemini, Midjourney, Ideogram, Flux, Stable Diffusion and more.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Umi Studio",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#4ea6bb",
 };
 
 export default function RootLayout({
@@ -44,6 +66,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-cream text-espresso font-sans">
         <GhibliBackdrop />
+        <ServiceWorkerRegistration />
         <LocaleProvider>
           <AppShell>{children}</AppShell>
         </LocaleProvider>
